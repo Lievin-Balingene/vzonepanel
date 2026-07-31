@@ -1,17 +1,20 @@
 <?php
 use function Hestiacp\quoteshellarg\quoteshellarg;
 
+// Load panel session data, then close immediately so FileGator/Symfony can
+// configure its own session handler without:
+// "Session ini settings cannot be changed when a session is active"
 if (session_status() === PHP_SESSION_NONE) {
-	session_start();
+	session_start(["read_and_close" => true]);
+} elseif (session_status() === PHP_SESSION_ACTIVE) {
+	session_write_close();
 }
 
 $lang = $_SESSION["language"] ?? ($_SESSION["LANGUAGE"] ?? "en");
 
-session_write_close();
-
 $dist_config = require __DIR__ . "/configuration_sample.php";
 $dist_config["public_path"] = "/fm/";
-$dist_config["frontend_config"]["app_name"] = "File Manager - Hestia Control Panel";
+$dist_config["frontend_config"]["app_name"] = "File Manager - V-zone Panel";
 $dist_config["frontend_config"]["logo"] = "../images/logo.svg";
 $dist_config["frontend_config"]["editable"] = [
 	".txt",
@@ -160,7 +163,6 @@ $dist_config["services"]["Filegator\Services\Storage\Filesystem"]["config"][
 			unset($_SESSION);
 			session_unset();
 			session_destroy();
-			session_start();
 			echo '<meta http-equiv="refresh" content="0; url=/">';
 			exit();
 		} else {

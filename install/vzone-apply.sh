@@ -84,6 +84,36 @@ for dest in "$PANEL_ROOT/data/templates/web/php-fpm" "$PANEL_ROOT/install/deb/te
 	[ -f "$NO_PHP_SRC" ] && cp -f "$NO_PHP_SRC" "$dest/no-php.tpl"
 done
 
+# File Manager (FileGator) session fix + V-zone branding
+FM_SRC="$SRC/install/deb/filemanager/filegator"
+FM_INSTALL_TPL="$PANEL_ROOT/install/deb/filemanager/filegator"
+if [ -f "$FM_SRC/configuration.php" ]; then
+	mkdir -p "$FM_INSTALL_TPL/backend/Services/Session/Adapters"
+	cp -f "$FM_SRC/configuration.php" "$FM_INSTALL_TPL/configuration.php"
+	if [ -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" ]; then
+		cp -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" \
+			"$FM_INSTALL_TPL/backend/Services/Session/Adapters/SessionStorage.php"
+	fi
+	# Live File Manager instance (if already installed)
+	if [ -d "$PANEL_ROOT/web/fm" ]; then
+		echo "[ * ] Patching File Manager session handling"
+		cp -f "$FM_SRC/configuration.php" "$PANEL_ROOT/web/fm/configuration.php"
+		if [ -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" ]; then
+			mkdir -p "$PANEL_ROOT/web/fm/backend/Services/Session/Adapters"
+			cp -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" \
+				"$PANEL_ROOT/web/fm/backend/Services/Session/Adapters/SessionStorage.php"
+		fi
+		# Keep APP_NAME in the live FM title
+		if [ -f "$PANEL_ROOT/conf/hestia.conf" ]; then
+			# shellcheck disable=SC1090
+			source "$PANEL_ROOT/conf/hestia.conf" 2> /dev/null || true
+			app_name="${APP_NAME:-V-zone Panel}"
+			sed -i "s|File Manager - .*\"|File Manager - ${app_name}\"|g" "$PANEL_ROOT/web/fm/configuration.php" 2> /dev/null || true
+		fi
+		chown hestiaweb:hestiaweb "$PANEL_ROOT/web/fm/configuration.php" 2> /dev/null || true
+	fi
+fi
+
 if [ -f "$PANEL_ROOT/conf/hestia.conf" ]; then
 	if grep -q "^APP_NAME=" "$PANEL_ROOT/conf/hestia.conf"; then
 		sed -i "s/^APP_NAME=.*/APP_NAME='V-zone Panel'/" "$PANEL_ROOT/conf/hestia.conf"
