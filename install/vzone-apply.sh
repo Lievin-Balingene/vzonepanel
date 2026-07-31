@@ -45,13 +45,16 @@ else
 fi
 
 # Composer dependencies for Application Manager (Symfony Process, etc.)
-# Always sync composer manifests from source, then ensure vendor is complete.
+# Symfony 7.4 supports PHP 8.2/8.3 (VPS). Symfony 8 requires PHP 8.4+.
 mkdir -p "$PANEL_ROOT/web/src"
 if [ -f "$SRC/web/src/composer.json" ]; then
 	cp -f "$SRC/web/src/composer.json" "$PANEL_ROOT/web/src/composer.json"
 fi
+# Drop incompatible lock files (e.g. Symfony 8 locked for PHP 8.4)
 if [ -f "$SRC/web/src/composer.lock" ]; then
 	cp -f "$SRC/web/src/composer.lock" "$PANEL_ROOT/web/src/composer.lock"
+else
+	rm -f "$PANEL_ROOT/web/src/composer.lock"
 fi
 
 need_composer=0
@@ -61,41 +64,52 @@ fi
 if [ ! -f "$PANEL_ROOT/web/src/vendor/symfony/process/Process.php" ]; then
 	need_composer=1
 fi
-if [ ! -f "$PANEL_ROOT/web/src/vendor/symfony/console/Application.php" ]; then
-	need_composer=1
+# Force refresh if an old Symfony 8 tree is present on PHP < 8.4
+if [ -f "$PANEL_ROOT/web/src/vendor/symfony/process/composer.json" ]; then
+	if grep -q '"version": "v8\.' "$PANEL_ROOT/web/src/vendor/symfony/process/composer.json" 2> /dev/null \
+		|| grep -q '"php": ">=8.4' "$PANEL_ROOT/web/src/vendor/symfony/process/composer.json" 2> /dev/null; then
+		need_composer=1
+	fi
 fi
 
 if [ "$need_composer" -eq 1 ] || [ "${VZONE_FORCE_COMPOSER:-}" = "1" ]; then
-	echo "[ * ] Installing PHP Composer dependencies (web/src)…"
+	echo "[ * ] Installing PHP Composer dependencies (web/src) for Application Manager…"
 	export DEBIAN_FRONTEND=noninteractive
-	if ! command -v composer > /dev/null 2>&1; then
-		apt-get update -qq
-		apt-get install -y -qq composer php-cli php-xml php-mbstring php-curl unzip 2> /dev/null \
-			|| apt-get install -y -qq composer unzip
+	apt-get update -qq 2> /dev/null || true
+	apt-get install -y -qq php-cli php-xml php-mbstring php-curl unzip curl ca-certificates 2> /dev/null || true
+
+	# Prefer a working Composer PHAR (apt composer can be broken on some images)
+	composer_phar="/usr/local/bin/composer.phar"
+	if [ ! -s "$composer_phar" ]; then
+		curl -fsSL https://getcomposer.org/download/latest-stable/composer.phar -o "$composer_phar" \
+			|| wget -q -O "$composer_phar" https://getcomposer.org/download/latest-stable/composer.phar
+		chmod 755 "$composer_phar"
 	fi
-	# Prefer Hestia bundled PHP if present (matches panel runtime)
-	php_bin="php"
-	if [ -x "$PANEL_ROOT/php/bin/php" ]; then
-		php_bin="$PANEL_ROOT/php/bin/php"
-	fi
-	if command -v composer > /dev/null 2>&1; then
-		(
-			cd "$PANEL_ROOT/web/src"
-			COMPOSER_ALLOW_SUPERUSER=1 "$php_bin" "$(command -v composer)" install --no-dev --optimize-autoloader --no-interaction
-		) || (
-			cd "$PANEL_ROOT/web/src"
-			COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
-		)
-	else
-		echo "Error: composer not found. Install with: apt-get install -y composer"
-		echo "Then run: cd $PANEL_ROOT/web/src && composer install --no-dev --optimize-autoloader"
+
+	php_bin=""
+	for candidate in /usr/bin/php8.3 /usr/bin/php8.2 /usr/bin/php "$PANEL_ROOT/php/bin/php"; do
+		if [ -x "$candidate" ] && "$candidate" -r 'exit(version_compare(PHP_VERSION, "8.2.0", ">=") ? 0 : 1);' 2> /dev/null; then
+			php_bin="$candidate"
+			break
+		fi
+	done
+	if [ -z "$php_bin" ]; then
+		echo "Error: PHP 8.2+ CLI required for Composer."
 		exit 1
 	fi
+
+	echo "      Using PHP: $($php_bin -v | head -n1)"
+	(
+		cd "$PANEL_ROOT/web/src"
+		rm -rf vendor
+		COMPOSER_ALLOW_SUPERUSER=1 "$php_bin" "$composer_phar" update --no-dev --optimize-autoloader --no-interaction
+	)
 fi
 
 if [ ! -f "$PANEL_ROOT/web/src/vendor/symfony/process/Process.php" ]; then
-	echo "Error: Symfony Process still missing after composer install."
-	echo "Run manually: cd $PANEL_ROOT/web/src && composer install --no-dev -o"
+	echo "Error: Symfony Process still missing after composer update."
+	echo "Run manually:"
+	echo "  cd $PANEL_ROOT/web/src && php /usr/local/bin/composer.phar update --no-dev -o"
 	exit 1
 fi
 

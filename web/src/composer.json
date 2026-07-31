@@ -1,15 +1,24 @@
 {
-    "autoload": {
-        "psr-4": {
-            "Hestia\\": "app/"
-        }
-    },
-    "require": {
-        "symfony/console": "^8.1.1",
-        "composer": "*",
-        "symfony/process": "^8.1.0"
-    },
-    "require-dev": {
-        "squizlabs/php_codesniffer": "^4.0.1"
-    }
+	"autoload": {
+		"psr-4": {
+			"Hestia\\": "app/"
+		}
+	},
+	"require": {
+		"php": ">=8.2",
+		"symfony/console": "^7.4",
+		"symfony/process": "^7.4"
+	},
+	"require-dev": {
+		"squizlabs/php_codesniffer": "^4.0.1"
+	},
+	"config": {
+		"sort-packages": true,
+		"platform": {
+			"php": "8.2.0"
+		},
+		"allow-plugins": {
+			"composer/composer": true
+		}
+	}
 }
