@@ -89,6 +89,36 @@ fi
 chown -R hestiaweb:hestiaweb "$PANEL_ROOT/web" 2> /dev/null || true
 chmod 755 "$PANEL_ROOT/bin"/v-*-web-app "$PANEL_ROOT/bin/v-get-web-app-port" 2> /dev/null || true
 
+# --- SSH MOTD / login banner: 100% V-zone ---
+IP_GUESS="$(hostname -I 2> /dev/null | awk '{print $1}')"
+cat > /etc/motd << EOF
+
+  ========================================================
+   V-zone Panel
+   Modern hosting control panel
+   https://${IP_GUESS}:8083
+  ========================================================
+
+EOF
+
+mkdir -p /etc/update-motd.d /etc/motd.d
+# Prefer our banner only (disable other update-motd scripts)
+chmod a-x /etc/update-motd.d/* 2> /dev/null || true
+cat > /etc/update-motd.d/00-vzone << EOF
+#!/bin/sh
+printf '\\n'
+printf '  ========================================================\\n'
+printf '   V-zone Panel\\n'
+printf '   Modern hosting control panel\\n'
+printf '   https://%s:8083\\n' "${IP_GUESS}"
+printf '  ========================================================\\n'
+printf '\\n'
+EOF
+chmod 755 /etc/update-motd.d/00-vzone
+cat > /etc/motd.d/vzone << EOF
+V-zone Panel — https://${IP_GUESS}:8083
+EOF
+
 # SSH: avoid lockout after firewall activation
 if [ -x "$PANEL_ROOT/bin/v-add-firewall-rule" ]; then
 	"$PANEL_ROOT/bin/v-add-firewall-rule" ACCEPT 0.0.0.0/0 22 TCP SSH 2> /dev/null || true
@@ -103,7 +133,22 @@ if [ -x "$PANEL_ROOT/bin/v-restart-service" ]; then
 	"$PANEL_ROOT/bin/v-restart-service" hestia 2> /dev/null || true
 fi
 
+# Panel notification for first admin user
+if [ -x "$PANEL_ROOT/bin/v-add-user-notification" ] && [ -d "$PANEL_ROOT/data/users" ]; then
+	for uconf in "$PANEL_ROOT"/data/users/*/user.conf; do
+		[ -f "$uconf" ] || continue
+		u="$(basename "$(dirname "$uconf")")"
+		role="$(grep "^ROLE=" "$uconf" 2> /dev/null | cut -d"'" -f2)"
+		if [ "$role" = "admin" ] || [ "$u" = "admin" ]; then
+			"$PANEL_ROOT/bin/v-add-user-notification" "$u" "Welcome to V-zone Panel!" \
+				'<p>Your server is ready. Add <a href="/add/web/">web domains</a> or open <a href="/list/apps/">Applications</a> to deploy Python &amp; Node.js apps.</p>' \
+				2> /dev/null || true
+			break
+		fi
+	done
+fi
+
 echo "[ OK ] V-zone Panel is ready."
-echo "      URL: https://$(hostname -I 2> /dev/null | awk '{print $1}'):8083"
+echo "      URL: https://${IP_GUESS}:8083"
 echo "      Apps: /list/apps/"
 exit 0
