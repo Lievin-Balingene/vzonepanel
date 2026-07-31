@@ -65,6 +65,12 @@ class PythonSetup extends BaseSetup {
 		"database" => true,
 		"resources" => [],
 		"server" => [
+			"nginx" => [
+				"template" => "django",
+			],
+			"apache2" => [
+				"template" => "django",
+			],
 			"backend" => "no-php",
 		],
 	];

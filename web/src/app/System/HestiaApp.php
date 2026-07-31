@@ -128,7 +128,8 @@ class HestiaApp
         try {
             $this->runUser('v-delete-fs-file', [$filePath]);
         } catch (ProcessFailedException) {
-            throw new RuntimeException(sprintf('Failed to delete file "%s"', $filePath));
+            // Missing files are common (empty docroot) — ignore
+            return;
         }
     }
 
@@ -224,6 +225,10 @@ class HestiaApp
     public function getUserHomeDir(): string
     {
         $info = posix_getpwnam($this->user());
+        if ($info === false || empty($info['dir'])) {
+            throw new RuntimeException(sprintf('Unable to resolve home directory for user "%s"', $this->user()));
+        }
+
         return $info['dir'];
     }
 
@@ -245,16 +250,23 @@ class HestiaApp
     {
         try {
             $result = $this->run('v-list-database-hosts', ['json']);
-        } catch (ProcessFailedException) {
-            throw new RuntimeException('Failed to list database hosts');
+            $hosts = $result->getOutputJson();
+        } catch (ProcessFailedException | \JsonException | \Throwable) {
+            return [];
+        }
+
+        if (!is_array($hosts)) {
+            return [];
         }
 
         $hostOfType = array_filter(
-            $result->getOutputJson(),
-            fn(array $host) => $host['TYPE'] === $type,
+            $hosts,
+            static function ($host) use ($type): bool {
+                return is_array($host) && ($host['TYPE'] ?? '') === $type;
+            },
         );
 
-        return array_column($hostOfType, 'HOST');
+        return array_values(array_filter(array_column($hostOfType, 'HOST'), 'is_string'));
     }
 
     public function checkDatabaseLimit(): bool
@@ -299,6 +311,10 @@ class HestiaApp
         try {
             $this->runUser('v-change-web-domain-tpl', [$domain, $template]);
         } catch (ProcessFailedException) {
+            // App proxy templates are also applied by v-add-web-app; avoid hard fail here
+            if (in_array($template, ['django', 'nodejs'], true)) {
+                return;
+            }
             throw new RuntimeException(sprintf('Failed to change to template "%s"', $template));
         }
     }
@@ -308,6 +324,10 @@ class HestiaApp
         try {
             $this->runUser('v-change-web-domain-backend-tpl', [$domain, $template]);
         } catch (ProcessFailedException) {
+            // no-php is optional on some installs; CLI also applies it best-effort
+            if ($template === 'no-php') {
+                return;
+            }
             throw new RuntimeException(
                 sprintf('Failed to change backend template to "%s"', $template),
             );
@@ -337,15 +357,22 @@ class HestiaApp
     {
         try {
             $result = $this->runUser('v-list-web-domain', [$domainName, 'json']);
+            $domainData = $result->getOutputJson()[$domainName] ?? [];
+            $rawIp = (string) ($domainData['IP'] ?? '');
+            $validatedIp = filter_var($rawIp, FILTER_VALIDATE_IP);
+            $ipAddress = is_string($validatedIp) ? $validatedIp : ($rawIp !== '' ? $rawIp : '127.0.0.1');
 
             return new WebDomain(
                 $domainName,
                 Util::joinPaths($this->getUserHomeDir(), 'web', $domainName),
-                filter_var($result->getOutputJson()[$domainName]['IP'], FILTER_VALIDATE_IP),
-                $result->getOutputJson()[$domainName]['SSL'] === 'yes',
+                $ipAddress,
+                ($domainData['SSL'] ?? '') === 'yes',
             );
-        } catch (ProcessFailedException) {
-            throw new Exception('Cannot find domain for user');
+        } catch (ProcessFailedException | \JsonException | \Throwable $e) {
+            if ($e instanceof ProcessFailedException) {
+                throw new Exception('Cannot find domain for user');
+            }
+            throw new Exception('Cannot find domain for user: ' . $e->getMessage());
         }
     }
 

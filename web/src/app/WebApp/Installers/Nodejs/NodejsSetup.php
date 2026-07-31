@@ -54,6 +54,12 @@ class NodejsSetup extends BaseSetup {
 		"database" => false,
 		"resources" => [],
 		"server" => [
+			"nginx" => [
+				"template" => "nodejs",
+			],
+			"apache2" => [
+				"template" => "nodejs",
+			],
 			"backend" => "no-php",
 		],
 	];

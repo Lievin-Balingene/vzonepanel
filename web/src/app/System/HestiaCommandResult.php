@@ -17,6 +17,13 @@ class HestiaCommandResult
 
     public function getOutputJson(): array
     {
-        return (array) json_decode($this->output, true, 512, JSON_THROW_ON_ERROR);
+        $raw = trim($this->output);
+        if ($raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+
+        return is_array($decoded) ? $decoded : [];
     }
 }

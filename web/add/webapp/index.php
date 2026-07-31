@@ -34,6 +34,10 @@ exec(HESTIA_CMD . "v-list-sys-php json", $output, $return_var);
 $php_versions = json_decode(implode("", $output), true);
 unset($output);
 
+$installer = null;
+$app = null;
+$app_installer = null;
+
 // Check GET request
 if (!empty($_GET["app"])) {
 	$app = basename($_GET["app"]);
@@ -56,9 +60,9 @@ if (!empty($_GET["app"])) {
 				$installer = new \Hestia\WebApp\AppWizard($app_installer, $v_domain, $hestia);
 				$GLOBALS["WebappInstaller"] = $installer;
 			}
-		} catch (Exception $e) {
+		} catch (Throwable $e) {
 			$_SESSION["error_msg"] = $e->getMessage();
-			header("Location: /add/webapp/?domain=" . $v_domain);
+			header("Location: /add/webapp/?domain=" . rawurlencode($v_domain));
 			exit();
 		}
 	} else {
@@ -81,12 +85,17 @@ if (!empty($_POST["ok"]) && !empty($app)) {
 			if (in_array($runtime, ["python", "nodejs"], true)) {
 				header("Location: /list/apps/");
 			} else {
-				header("Location: /add/webapp/?domain=" . $v_domain);
+				header("Location: /add/webapp/?domain=" . rawurlencode($v_domain));
 			}
 			exit();
-		} catch (Exception $e) {
+		} catch (Throwable $e) {
 			$_SESSION["error_msg"] = $e->getMessage();
-			header("Location: /add/webapp/?app=" . rawurlencode($app) . "&domain=" . $v_domain);
+			header(
+				"Location: /add/webapp/?app=" .
+					rawurlencode($app) .
+					"&domain=" .
+					rawurlencode($v_domain),
+			);
 			exit();
 		}
 	}
@@ -96,17 +105,22 @@ if (!empty($installer)) {
 	render_page($user, $TAB, "setup_webapp");
 } else {
 	$hestia = new \Hestia\System\HestiaApp();
-	$appInstallers = glob(__DIR__ . "/../../src/app/WebApp/Installers/*/*.php");
+	$appInstallers = glob(__DIR__ . "/../../src/app/WebApp/Installers/*/*Setup.php") ?: [];
 
 	$v_web_apps = [];
-	foreach ($appInstallers as $app) {
-		$pattern = "/Installers\/([a-zA-Z][a-zA-Z0,9].*)\/([a-zA-Z][a-zA-Z0,9].*)Setup\.php/";
+	foreach ($appInstallers as $app_path) {
+		$pattern = "/Installers\/([a-zA-Z][a-zA-Z0-9]*)\/\\1Setup\.php$/";
 		$class = "\Hestia\WebApp\Installers\%s\%sSetup";
 
-		if (preg_match($pattern, $app, $matches)) {
+		if (preg_match($pattern, str_replace("\\", "/", $app_path), $matches)) {
 			$app_installer_class = sprintf($class, $matches[1], $matches[1]);
-
-			$v_web_apps[] = (new $app_installer_class($hestia))->getInfo();
+			try {
+				if (class_exists($app_installer_class)) {
+					$v_web_apps[] = (new $app_installer_class($hestia))->getInfo();
+				}
+			} catch (Throwable) {
+				continue;
+			}
 		}
 	}
 

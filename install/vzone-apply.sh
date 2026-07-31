@@ -33,12 +33,25 @@ fi
 echo "[ * ] Applying V-zone Panel from $SRC → $PANEL_ROOT"
 
 # Full web tree INCLUDING compiled css/themes + js/dist
+# Keep Composer vendor trees — they are gitignored in the repo and must not be deleted
 if command -v rsync > /dev/null 2>&1; then
 	rsync -a --delete \
 		--exclude 'css/themes/custom/' \
+		--exclude 'src/vendor/' \
+		--exclude 'inc/vendor/' \
 		"$SRC/web/" "$PANEL_ROOT/web/"
 else
 	cp -a "$SRC/web/." "$PANEL_ROOT/web/"
+fi
+
+if [ ! -f "$PANEL_ROOT/web/src/vendor/autoload.php" ]; then
+	echo "[ ! ] Composer vendor missing under $PANEL_ROOT/web/src — restoring..."
+	if [ -f "$PANEL_ROOT/web/src/composer.json" ] && command -v composer > /dev/null 2>&1; then
+		(cd "$PANEL_ROOT/web/src" && composer install --no-dev --optimize-autoloader)
+	else
+		echo "Error: $PANEL_ROOT/web/src/vendor/autoload.php missing. Run: cd $PANEL_ROOT/web/src && composer install"
+		exit 1
+	fi
 fi
 
 for f in v-add-web-app v-delete-web-app v-list-web-app v-restart-web-app v-get-web-app-port; do
@@ -48,11 +61,27 @@ for f in v-add-web-app v-delete-web-app v-list-web-app v-restart-web-app v-get-w
 done
 
 TPL_SRC="$SRC/install/deb/templates/web/nginx/php-fpm"
-for dest in "$PANEL_ROOT/data/templates/web/nginx" "$PANEL_ROOT/install/deb/templates/web/nginx/php-fpm"; do
+for dest in \
+	"$PANEL_ROOT/data/templates/web/nginx" \
+	"$PANEL_ROOT/data/templates/web/nginx/php-fpm" \
+	"$PANEL_ROOT/install/deb/templates/web/nginx/php-fpm"; do
 	mkdir -p "$dest"
 	for f in django.tpl django.stpl nodejs.tpl nodejs.stpl; do
 		[ -f "$TPL_SRC/$f" ] && cp -f "$TPL_SRC/$f" "$dest/$f"
 	done
+done
+
+# Ensure Python/Node runtime packages for Application Manager
+export DEBIAN_FRONTEND=noninteractive
+apt-get install -y -qq python3 python3-venv python3-pip 2> /dev/null || true
+# Node is optional but recommended for Node.js apps
+apt-get install -y -qq nodejs npm 2> /dev/null || true
+
+# Ensure no-php backend template exists when php-fpm is used
+NO_PHP_SRC="$SRC/install/deb/templates/web/php-fpm/no-php.tpl"
+for dest in "$PANEL_ROOT/data/templates/web/php-fpm" "$PANEL_ROOT/install/deb/templates/web/php-fpm"; do
+	mkdir -p "$dest"
+	[ -f "$NO_PHP_SRC" ] && cp -f "$NO_PHP_SRC" "$dest/no-php.tpl"
 done
 
 if [ -f "$PANEL_ROOT/conf/hestia.conf" ]; then

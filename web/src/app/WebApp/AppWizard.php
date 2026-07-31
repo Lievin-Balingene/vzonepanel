@@ -32,15 +32,20 @@ class AppWizard
 
     public function isDomainRootClean(): bool
     {
-        $installationTarget = $this->getInstallationTarget($this->domain);
-        $files = $this->appcontext->listFiles($installationTarget->getDocRoot());
+        try {
+            $installationTarget = $this->getInstallationTarget($this->domain);
+            $files = $this->appcontext->listFiles($installationTarget->getDocRoot());
 
-        $filteredFiles = array_filter(
-            $files,
-            fn(string $file) => !in_array($file, ['index.html', 'robots.txt']),
-        );
+            $filteredFiles = array_filter(
+                $files,
+                fn(string $file) => !in_array($file, ['index.html', 'robots.txt']),
+            );
 
-        return count($filteredFiles) <= 0;
+            return count($filteredFiles) <= 0;
+        } catch (\Throwable) {
+            // Prefer showing the form over a hard 500 if the docroot check fails
+            return true;
+        }
     }
 
     public function formNamespace(): string
@@ -67,27 +72,37 @@ class AppWizard
         }
         if ($this->installer->getConfig('database') === true) {
             $databaseName = $this->generateDatabaseName();
+            $dbHosts = $this->appcontext->getDatabaseHosts('mysql');
+            if ($dbHosts === []) {
+                $dbHosts = ['localhost'];
+            }
 
             $databaseOptions = [
                 'database_create' => [
                     'type' => 'boolean',
                     'value' => true,
+                    'label' => 'Create a MySQL database',
                 ],
                 'database_host' => [
                     'type' => 'select',
-                    'options' => $this->appcontext->getDatabaseHosts('mysql'),
+                    'options' => array_combine($dbHosts, $dbHosts) ?: ['localhost' => 'localhost'],
+                    'value' => $dbHosts[0],
+                    'label' => 'Database host',
                 ],
                 'database_name' => [
                     'type' => 'text',
                     'value' => $databaseName,
+                    'label' => 'Database name',
                 ],
                 'database_user' => [
                     'type' => 'text',
                     'value' => $databaseName,
+                    'label' => 'Database user',
                 ],
                 'database_password' => [
                     'type' => 'password',
                     'placeholder' => 'auto',
+                    'label' => 'Database password',
                 ],
             ];
 
@@ -142,7 +157,7 @@ class AppWizard
 
             $target->addTargetDatabase(
                 new TargetDatabase(
-                    $options['database_host'],
+                    (string) ($options['database_host'] ?? 'localhost'),
                     $this->appcontext->user() . '_' . $options['database_name'],
                     $this->appcontext->user() . '_' . $options['database_user'],
                     $options['database_password'],

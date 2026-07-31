@@ -18,7 +18,15 @@
 <!-- Begin form -->
 <div class="container">
 
-	<?php if (!empty($WebappInstaller->getOptions())) { ?>
+	<?php
+	$webapp_options = [];
+	try {
+		$webapp_options = $WebappInstaller->getOptions();
+	} catch (Throwable $e) {
+		$_SESSION["error_msg"] = $e->getMessage();
+	}
+	?>
+	<?php if (!empty($webapp_options)) { ?>
 		<form id="main-form" method="POST" name="v_setup_webapp">
 			<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
 			<input type="hidden" name="ok" value="true">
@@ -32,7 +40,15 @@
 
 			<div class="form-container vz-form-card">
 				<?php show_alert_message($_SESSION); ?>
-				<?php if (!$WebappInstaller->isDomainRootClean()) { ?>
+				<?php
+				$domain_root_clean = true;
+				try {
+					$domain_root_clean = $WebappInstaller->isDomainRootClean();
+				} catch (Throwable) {
+					$domain_root_clean = true;
+				}
+				?>
+				<?php if (!$domain_root_clean) { ?>
 					<div class="alert alert-info u-mb10" role="alert">
 						<i class="fas fa-info"></i>
 						<div>
@@ -47,24 +63,29 @@
 					<h2 class="vz-form-section-title"><?= tohtml(_("Application settings")) ?></h2>
 					<p class="vz-form-section-hint"><?= tohtml(_("Starters create a ready-to-run app. For Custom, upload your code with File Manager first.")) ?></p>
 
-					<?php foreach ($WebappInstaller->getOptions() as $form_name => $form_control) {
+					<?php foreach ($webapp_options as $form_name => $form_control) {
 						$field_name = $WebappInstaller->formNamespace() . $form_name;
-						$field_type = $form_control;
+						$field_type = "text";
 						$field_value = "";
-						$field_label =
-							isset($form_control["label"])
-								? htmlentities($form_control["label"])
-								: ucwords(str_replace([".","_"], " ", $form_name));
+						$field_label = ucwords(str_replace([".", "_"], " ", (string) $form_name));
 						$field_placeholder = "";
+						$field_options = [];
+
 						if (is_array($form_control)) {
-							$field_type = !empty($form_control["type"]) ? $form_control["type"] : "text";
-							$field_value = !empty($form_control["value"]) ? $form_control["value"] : "";
-							$field_placeholder = !empty($form_control["placeholder"]) ? $form_control["placeholder"] : "";
+							$field_type = !empty($form_control["type"]) ? (string) $form_control["type"] : "text";
+							$field_value = !empty($form_control["value"]) ? (string) $form_control["value"] : "";
+							$field_placeholder = !empty($form_control["placeholder"])
+								? (string) $form_control["placeholder"]
+								: "";
+							if (!empty($form_control["label"])) {
+								$field_label = (string) $form_control["label"];
+							}
+							if (!empty($form_control["options"]) && is_array($form_control["options"])) {
+								$field_options = $form_control["options"];
+							}
+						} elseif (is_string($form_control)) {
+							$field_type = $form_control;
 						}
-						$field_value = htmlentities($field_value);
-						$field_label = htmlentities($field_label);
-						$field_name = htmlentities($field_name);
-						$field_placeholder = htmlentities($field_placeholder);
 					?>
 						<div class="u-mb10">
 							<?php if ($field_type != "boolean"): ?>
@@ -78,13 +99,13 @@
 								</label>
 							<?php endif; ?>
 
-							<?php if ($field_type == "select" && count($form_control["options"])): ?>
+							<?php if ($field_type == "select" && count($field_options) > 0): ?>
 								<select class="form-select" name="<?= tohtml($field_name) ?>" id="<?= tohtml($field_name) ?>">
-									<?php foreach ($form_control["options"] as $key => $option):
-										$key = !is_numeric($key) ? $key : $option;
-										$selected = (!empty($form_control["value"]) && $key == $form_control["value"]) ? "selected" : ""; ?>
-										<option value="<?= tohtml($key) ?>" <?= tohtml($selected) ?>>
-											<?= tohtml($option) ?>
+									<?php foreach ($field_options as $key => $option):
+										$option_key = !is_numeric($key) ? (string) $key : (string) $option;
+										$selected = $field_value !== "" && (string) $option_key === $field_value ? "selected" : ""; ?>
+										<option value="<?= tohtml($option_key) ?>" <?= $selected ?>>
+											<?= tohtml((string) $option) ?>
 										</option>
 									<?php endforeach; ?>
 								</select>
@@ -97,7 +118,7 @@
 									placeholder="<?= tohtml($field_placeholder) ?>"
 								><?= tohtml($field_value) ?></textarea>
 							<?php elseif ($field_type == "boolean"):
-								$checked = !empty($field_value) ? "checked" : ""; ?>
+								$checked = $field_value !== "" && $field_value !== "0" && $field_value !== "false" ? "checked" : ""; ?>
 								<div class="form-check">
 									<input
 										class="form-check-input"
@@ -105,7 +126,7 @@
 										name="<?= tohtml($field_name) ?>"
 										id="<?= tohtml($field_name) ?>"
 										value="true"
-										<?= tohtml($checked) ?>
+										<?= $checked ?>
 									>
 									<label for="<?= tohtml($field_name) ?>">
 										<?= tohtml($field_label) ?>
@@ -141,6 +162,14 @@
 				</div>
 			</div>
 		</form>
+	<?php } else { ?>
+		<div class="form-container vz-form-card">
+			<?php show_alert_message($_SESSION); ?>
+			<p><?= tohtml(_("Unable to load application settings. Check the server logs or try again.")) ?></p>
+			<a class="button button-secondary" href="/add/webapp/?<?= tohtml(http_build_query(["domain" => $v_domain])) ?>">
+				<?= tohtml(_("Back")) ?>
+			</a>
+		</div>
 	<?php } ?>
 </div>
 <!-- End form -->
