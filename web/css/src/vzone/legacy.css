@@ -117,6 +117,7 @@
 	min-height: 100vh;
 	display: grid;
 	grid-template-columns: 1fr;
+	align-items: stretch;
 }
 
 @media (min-width: 960px) {
@@ -217,7 +218,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 28px 20px 40px;
+	min-height: 100vh;
+	padding: 40px 24px;
 	position: relative;
 	background:
 		radial-gradient(ellipse 80% 50% at 50% 0%, rgb(20 184 166 / 8%), transparent 55%),
@@ -226,6 +228,7 @@
 
 .vz-login-card {
 	width: min(420px, 100%);
+	max-width: 420px;
 	padding: 28px 26px 22px;
 	background: var(--color-surface);
 	border: 1px solid var(--color-border);
@@ -459,6 +462,37 @@ body.login .app,
 body.page-login .app {
 	display: block;
 	min-height: 100vh;
+}
+
+body.login,
+body.page-login {
+	overflow-x: hidden;
+}
+
+@media (max-width: 959px) {
+	.vz-login-stage {
+		grid-template-rows: auto minmax(0, 1fr);
+	}
+
+	.vz-login-hero {
+		min-height: auto;
+		padding: 28px 20px 24px;
+	}
+
+	.vz-login-hero-content {
+		max-width: none;
+	}
+
+	.vz-login-panel {
+		min-height: auto;
+		padding: 20px 16px 32px;
+		align-items: flex-start;
+	}
+
+	.vz-login-card {
+		width: min(460px, 100%);
+		padding: 24px 20px 20px;
+	}
 }
 
 @keyframes vz-login-rise {
