@@ -21,16 +21,19 @@
 		<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
 		<input type="hidden" name="ok" value="Add">
 
-		<div class="form-container form-container-wide">
-			<div class="u-side-by-side-tablet u-mb20">
-				<h1><?= tohtml( _("Add Cron Job")) ?></h1>
-				<p>
-					<?= tohtml( _("System time")) ?>:
+		<div class="vz-page-hero u-mb20">
+			<div>
+				<h1 class="vz-page-title"><?= tohtml(_("Add Cron Job")) ?></h1>
+				<p class="vz-page-subtitle">
+					<?= tohtml(_("System time")) ?>:
 					<time datetime="<?= tohtml(date("c", $current_timestamp)) ?>" class="u-text-bold">
 						<?= tohtml(date("d M Y, H:i", $current_timestamp)) ?>
 					</time>
 				</p>
 			</div>
+		</div>
+
+		<div class="form-container form-container-wide vz-form-card">
 			<?php show_alert_message($_SESSION); ?>
 			<div class="u-mb20">
 				<label for="v_cmd" class="form-label"><?= tohtml( _("Command")) ?></label>

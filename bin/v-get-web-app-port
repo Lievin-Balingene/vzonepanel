@@ -1,0 +1,42 @@
+#!/bin/bash
+# info: allocate free localhost port for web apps
+# options: [START] [END]
+# example: v-get-web-app-port 3100 3999
+
+start=${1-3100}
+end=${2-3999}
+
+# shellcheck source=/etc/hestiacp/hestia.conf
+source /etc/hestiacp/hestia.conf
+# shellcheck source=/usr/local/hestia/func/main.sh
+source $HESTIA/func/main.sh
+source_conf "$HESTIA/conf/hestia.conf"
+
+used_ports=""
+for user_conf in $HESTIA/data/users/*/web-apps.conf; do
+	[ -e "$user_conf" ] || continue
+	ports=$(grep -oE "PORT='[0-9]+'" "$user_conf" | cut -d"'" -f2)
+	used_ports="$used_ports $ports"
+done
+
+# Also check listening sockets if ss available
+listening=""
+if command -v ss > /dev/null 2>&1; then
+	listening=$(ss -ltn | awk '{print $4}' | grep -oE '[0-9]+$' | sort -u)
+fi
+
+for port in $(seq "$start" "$end"); do
+	busy="no"
+	for used in $used_ports $listening; do
+		if [ "$used" = "$port" ]; then
+			busy="yes"
+			break
+		fi
+	done
+	if [ "$busy" = "no" ]; then
+		echo "$port"
+		exit
+	fi
+done
+
+check_result "$E_NOTEXIST" "No free port available in range $start-$end"

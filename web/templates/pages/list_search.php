@@ -42,6 +42,13 @@
 
 <div class="container">
 
+	<div class="vz-page-hero">
+		<div>
+			<h1 class="vz-page-title"><?= tohtml(_("Search")) ?></h1>
+			<p class="vz-page-subtitle"><?= tohtml(_("Results across domains, accounts, and resources.")) ?></p>
+		</div>
+	</div>
+
 	<h1 class="u-text-center u-hide-desktop u-mt20 u-pr30 u-mb20 u-pl30"><?= tohtml( _("Search Results")) ?></h1>
 
 	<div class="units-table js-units-container">

@@ -367,6 +367,41 @@ class HestiaApp
         return $this->runPHP($phpVersion, $wpCliBin, $arguments);
     }
 
+    /**
+     * Run a privileged Hestia CLI that manages web apps (django/nodejs).
+     *
+     * @param string[] $arguments Arguments after the command name (domain, type, …)
+     */
+    public function runWebAppCli(string $command, array $arguments): HestiaCommandResult
+    {
+        try {
+            $cli_script = realpath(HESTIA_DIR_BIN . $command);
+            $cmd = ['/usr/bin/sudo', $cli_script, $this->user(), ...$arguments];
+            $cmd = array_map(fn(string $argument) => str_replace(' ', '\\ ', $argument), $cmd);
+            $process = new Process($cmd);
+            // Django/Node installs (venv, pip, npm) can take several minutes
+            $process->setTimeout(900);
+            $process->run();
+            if (!$process->isSuccessful()) {
+                trigger_error($process->getCommandLine() . ' | ' . $process->getOutput());
+                throw new ProcessFailedException($process);
+            }
+            return new HestiaCommandResult(
+                $process->getCommandLine(),
+                $process->getExitCode(),
+                $process->getOutput(),
+            );
+        } catch (ProcessFailedException $exception) {
+            throw new RuntimeException(
+                sprintf(
+                    'Failed to run "%s": %s',
+                    $command,
+                    $exception->getProcess()->getOutput() ?: $exception->getMessage(),
+                ),
+            );
+        }
+    }
+
     public function runPHP(
         string $phpVersion,
         string $command,

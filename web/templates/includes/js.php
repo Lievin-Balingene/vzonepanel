@@ -11,6 +11,7 @@
 			NOTIFICATIONS_DELETE_ALL: '<?= _("Delete all notifications") ?>',
 			CONFIRM_LEAVE_PAGE: '<?= _("Are you sure you want to leave the page?") ?>',
 			ERROR_MESSAGE: '<?= !empty($_SESSION["error_msg"]) ? htmlentities($_SESSION["error_msg"],ENT_QUOTES) : "" ?>',
+			OK_MESSAGE: '<?= !empty($_SESSION["ok_msg"]) ? htmlentities(strip_tags($_SESSION["ok_msg"]),ENT_QUOTES) : "" ?>',
 			BLACKLIST: '<?= _("BLACKLIST") ?>',
 			IPVERSE: '<?= _("IPVERSE") ?>'
 		});

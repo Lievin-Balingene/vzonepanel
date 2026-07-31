@@ -30,8 +30,14 @@
 		<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
 		<input type="hidden" name="ok" value="Add">
 
-		<div class="form-container">
-			<h1 class="u-mb20"><?= tohtml( _("Add DNS Zone")) ?></h1>
+		<div class="vz-page-hero u-mb20">
+			<div>
+				<h1 class="vz-page-title"><?= tohtml(_("Add DNS Zone")) ?></h1>
+				<p class="vz-page-subtitle"><?= tohtml(_("Create a DNS zone with optional advanced settings.")) ?></p>
+			</div>
+		</div>
+
+		<div class="form-container vz-form-card">
 			<?php show_alert_message($_SESSION); ?>
 			<?php if ($_SESSION["role"] == "admin" && $accept !== "true") { ?>
 				<div class="alert alert-danger" role="alert">

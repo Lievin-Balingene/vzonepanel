@@ -1,0 +1,27 @@
+#!/bin/bash
+# info: restart web application service
+# options: USER DOMAIN
+# example: v-restart-web-app admin example.com
+
+user=$1
+domain=$2
+
+# shellcheck source=/etc/hestiacp/hestia.conf
+source /etc/hestiacp/hestia.conf
+# shellcheck source=/usr/local/hestia/func/main.sh
+source $HESTIA/func/main.sh
+source_conf "$HESTIA/conf/hestia.conf"
+
+check_args '2' "$#" 'USER DOMAIN'
+is_format_valid 'user' 'domain'
+is_object_valid 'user' 'USER' "$user"
+
+apps_conf="$USER_DATA/web-apps.conf"
+line=$(grep "DOMAIN='$domain'" "$apps_conf" 2> /dev/null | head -n1)
+[ -n "$line" ] || check_result "$E_NOTEXIST" "Web app not found for $domain"
+eval "$line"
+
+systemctl restart "$SERVICE" || check_result "$E_RESTART" "Failed to restart $SERVICE"
+$BIN/v-log-action "$user" "Info" "Web" "Web application restarted (Domain: $domain)."
+log_event "$OK" "$ARGUMENTS"
+exit

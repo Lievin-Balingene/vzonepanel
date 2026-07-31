@@ -1,5 +1,5 @@
-<div class="login">
-	<a href="/" class="u-block u-mb40">
+<div class="login vz-login">
+	<a href="/" class="vz-login-brand u-block u-mb40">
 		<img src="/images/logo.svg" alt="<?= tohtml($_SESSION["APP_NAME"]) ?>" width="100" height="120">
 	</a>
 	<form id="login-form" method="post" action="/login/">

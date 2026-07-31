@@ -56,14 +56,15 @@ class AppWizard
         $form = $this->installer->getConfig('form');
         $info = $this->installer->getInfo();
 
-        $form = array_merge($form, [
-            'php_version' => [
-                'type' => 'select',
-                'value' => (string) max($info->supportedPHPVersions),
-                'options' => $info->supportedPHPVersions,
-            ],
-        ]);
-
+        if (!empty($info->supportedPHPVersions)) {
+            $form = array_merge($form, [
+                'php_version' => [
+                    'type' => 'select',
+                    'value' => (string) max($info->supportedPHPVersions),
+                    'options' => $info->supportedPHPVersions,
+                ],
+            ]);
+        }
         if ($this->installer->getConfig('database') === true) {
             $databaseName = $this->generateDatabaseName();
 

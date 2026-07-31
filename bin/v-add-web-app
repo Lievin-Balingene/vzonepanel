@@ -1,0 +1,487 @@
+#!/bin/bash
+# info: add Python or Node.js web application for a domain
+# options: USER DOMAIN TYPE [OPTIONS_JSON]
+#
+# TYPE: python|django|flask|fastapi|nodejs
+# OPTIONS examples:
+#   {"framework":"django","project":"config"}
+#   {"framework":"flask"}
+#   {"framework":"fastapi"}
+#   {"framework":"custom","app_directory":"private/apps/app","entry_point":"app:app","server_type":"wsgi"}
+#   {"framework":"express"}
+#   {"framework":"custom","app_directory":"private/apps/nodejs","startup":"npm start"}
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+user=$1
+domain=$2
+apptype=$(echo "$3" | tr '[:upper:]' '[:lower:]')
+options=${4-\{\}}
+
+# shellcheck source=/etc/hestiacp/hestia.conf
+source /etc/hestiacp/hestia.conf
+# shellcheck source=/usr/local/hestia/func/main.sh
+source $HESTIA/func/main.sh
+# shellcheck source=/usr/local/hestia/func/domain.sh
+source $HESTIA/func/domain.sh
+source_conf "$HESTIA/conf/hestia.conf"
+
+parse_opt() {
+	local key=$1
+	python3 - "$options" "$key" << 'PY'
+import json, sys
+raw, key = sys.argv[1], sys.argv[2]
+try:
+    data = json.loads(raw) if raw else {}
+except Exception:
+    data = {}
+val = data.get(key, "")
+if isinstance(val, bool):
+    print("yes" if val else "no")
+elif val is None:
+    print("")
+else:
+    print(val)
+PY
+}
+
+# Resolve app directory under the domain web root only (path traversal safe)
+resolve_app_dir() {
+	local rel=$1
+	local fallback=$2
+	[ -z "$rel" ] && rel="$fallback"
+	rel=$(echo "$rel" | sed 's#^\./##; s#^/##')
+	# Disallow .. segments
+	if echo "$rel" | grep -q '\.\.'; then
+		check_result "$E_INVALID" "Invalid application directory"
+	fi
+	local resolved="$web_root/$rel"
+	mkdir -p "$resolved"
+	chown -R "$user:$user" "$resolved"
+	echo "$resolved"
+}
+
+# Allow only safe process start tokens (hosting multi-tenant safety)
+assert_safe_cmd() {
+	local label=$1
+	local value=$2
+	if [ -z "$value" ]; then
+		return 0
+	fi
+	if ! echo "$value" | grep -Eq '^[A-Za-z0-9_./:@ +=-]+$'; then
+		check_result "$E_INVALID" "Invalid $label"
+	fi
+}
+
+write_env_file() {
+	local dest=$1
+	local raw
+	raw=$(parse_opt "env_vars")
+	# Always provide PORT for apps that read it
+	{
+		echo "PORT=$port"
+		echo "NODE_ENV=production"
+		echo "PYTHONDONTWRITEBYTECODE=1"
+		if [ -n "$raw" ]; then
+			python3 - "$raw" << 'PY'
+import sys
+raw = sys.argv[1]
+for line in raw.replace("\r", "").split("\n"):
+    line = line.strip()
+    if not line or line.startswith("#"):
+        continue
+    if "=" not in line:
+        continue
+    key, _, val = line.partition("=")
+    key = key.strip()
+    if not key or not key.replace("_", "").isalnum():
+        continue
+    # Strip optional quotes
+    val = val.strip()
+    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+        val = val[1:-1]
+    # systemd EnvironmentFile: escape newline/% and avoid shell metacharacters issues
+    val = val.replace("%", "%%").replace("\n", " ")
+    print(f"{key}={val}")
+PY
+		fi
+	} > "$dest"
+	chown "$user:$user" "$dest"
+	chmod 640 "$dest"
+}
+
+create_venv() {
+	local venv_dir=$1
+	runuser -u "$user" -- python3 -m venv "$venv_dir"
+	runuser -u "$user" -- "$venv_dir/bin/pip" install --upgrade pip wheel setuptools > /dev/null
+}
+
+pip_install_requirements() {
+	local venv_dir=$1
+	local app_dir=$2
+	if [ -f "$app_dir/requirements.txt" ]; then
+		runuser -u "$user" -- "$venv_dir/bin/pip" install -r "$app_dir/requirements.txt" > /dev/null
+	fi
+}
+
+configure_django_settings() {
+	local settings=$1
+	local project=$2
+	[ -f "$settings" ] || return 0
+	sed -i "s/ALLOWED_HOSTS = \[\]/ALLOWED_HOSTS = ['*']/" "$settings"
+	grep -q "STATIC_ROOT" "$settings" || echo "STATIC_ROOT = BASE_DIR / 'staticfiles'" >> "$settings"
+
+	db_name=$(parse_opt "database_name")
+	db_user=$(parse_opt "database_user")
+	db_pass=$(parse_opt "database_password")
+	db_host=$(parse_opt "database_host")
+	[ -z "$db_host" ] && db_host="localhost"
+
+	if [ -n "$db_name" ] && [ -n "$db_user" ]; then
+		full_db="${user}_${db_name}"
+		full_dbuser="${user}_${db_user}"
+		python3 - "$settings" "$full_db" "$full_dbuser" "$db_pass" "$db_host" << 'PY'
+import json, re, sys
+path, db, user, pwd, host = sys.argv[1:6]
+text = open(path).read()
+block = (
+    "DATABASES = {\n"
+    "    'default': {\n"
+    "        'ENGINE': 'django.db.backends.mysql',\n"
+    f"        'NAME': {json.dumps(db)},\n"
+    f"        'USER': {json.dumps(user)},\n"
+    f"        'PASSWORD': {json.dumps(pwd)},\n"
+    f"        'HOST': {json.dumps(host)},\n"
+    "        'PORT': '3306',\n"
+    "    }\n"
+    "}\n"
+)
+text2, n = re.subn(r"DATABASES\s*=\s*\{.*?\}", block, text, count=1, flags=re.S)
+if n == 0:
+    text2 = text + "\n" + block + "\n"
+open(path, "w").write(text2)
+PY
+		runuser -u "$user" -- "$venv_dir/bin/pip" install mysqlclient PyMySQL > /dev/null 2>&1 \
+			|| runuser -u "$user" -- "$venv_dir/bin/pip" install PyMySQL > /dev/null
+		init_py="$app_dir/$project/__init__.py"
+		grep -q "pymysql" "$init_py" 2> /dev/null || echo -e "import pymysql\npymysql.install_as_MySQLdb()\n" >> "$init_py"
+		chown "$user:$user" "$init_py" "$settings"
+	fi
+}
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '3' "$#" 'USER DOMAIN TYPE [OPTIONS_JSON]'
+is_format_valid 'user' 'domain'
+is_object_valid 'user' 'USER' "$user"
+is_object_valid "web" 'DOMAIN' "$domain"
+
+# Normalize legacy django type into python+framework
+framework=$(parse_opt "framework")
+case "$apptype" in
+	django | flask | fastapi)
+		[ -z "$framework" ] && framework="$apptype"
+		apptype="python"
+		;;
+	python | nodejs) ;;
+	*)
+		check_result "$E_INVALID" "TYPE must be python, django, flask, fastapi or nodejs"
+		;;
+esac
+
+get_domain_values 'web'
+apps_conf="$USER_DATA/web-apps.conf"
+touch "$apps_conf"
+chmod 640 "$apps_conf"
+
+if grep -q "DOMAIN='$domain'" "$apps_conf" 2> /dev/null; then
+	check_result "$E_EXISTS" "Web app already exists for $domain"
+fi
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+homedir=$(getent passwd "$user" | cut -f6 -d:)
+web_root="$homedir/web/$domain"
+app_base="$web_root/private/apps"
+mkdir -p "$app_base"
+chown "$user:$user" "$web_root/private" "$app_base" 2> /dev/null
+
+service_id="hestia-app-$(echo "$user-$domain" | tr '.' '-')"
+unit_path="/etc/systemd/system/${service_id}.service"
+env_file=""
+display_type=""
+
+if [ "$apptype" = "python" ]; then
+	command -v python3 > /dev/null 2>&1 || check_result "$E_NOTEXIST" "python3 is not installed"
+	port=$($BIN/v-get-web-app-port 8100 8999)
+	[ -z "$framework" ] && framework="django"
+	framework=$(echo "$framework" | tr '[:upper:]' '[:lower:]')
+	server_type=$(parse_opt "server_type")
+	entry_point=$(parse_opt "entry_point")
+	app_directory=$(parse_opt "app_directory")
+	assert_safe_cmd "entry_point" "$entry_point"
+	workers=2
+	venv_dir="$app_base/venv"
+	template="django"
+	backend_tpl="no-php"
+	display_type="$framework"
+
+	case "$framework" in
+		django)
+			project=$(parse_opt "project")
+			[ -z "$project" ] && project="config"
+			project=$(echo "$project" | tr -cd 'A-Za-z0-9_')
+			[ -z "$project" ] && project="config"
+			app_dir=$(resolve_app_dir "$app_directory" "private/apps/django")
+			rm -rf "$venv_dir"
+			create_venv "$venv_dir"
+			runuser -u "$user" -- "$venv_dir/bin/pip" install "Django>=5.0,<6" gunicorn > /dev/null
+			# Fresh project if manage.py missing
+			if [ ! -f "$app_dir/manage.py" ]; then
+				runuser -u "$user" -- bash -c "cd '$app_dir' && '$venv_dir/bin/django-admin' startproject $project ."
+			fi
+			configure_django_settings "$app_dir/$project/settings.py" "$project"
+			runuser -u "$user" -- bash -c "cd '$app_dir' && '$venv_dir/bin/python' manage.py migrate --noinput" > /dev/null 2>&1 || true
+			runuser -u "$user" -- bash -c "cd '$app_dir' && '$venv_dir/bin/python' manage.py collectstatic --noinput" > /dev/null 2>&1 || true
+			[ -z "$entry_point" ] && entry_point="$project.wsgi:application"
+			start_cmd="$venv_dir/bin/gunicorn --bind 127.0.0.1:$port --workers $workers --timeout 120 $entry_point"
+			workdir="$app_dir"
+			;;
+		flask)
+			app_dir=$(resolve_app_dir "$app_directory" "private/apps/flask")
+			rm -rf "$venv_dir"
+			create_venv "$venv_dir"
+			runuser -u "$user" -- "$venv_dir/bin/pip" install "Flask>=3.0" gunicorn > /dev/null
+			if [ ! -f "$app_dir/app.py" ] && [ ! -f "$app_dir/wsgi.py" ]; then
+				cat > "$app_dir/app.py" << EOF
+from flask import Flask
+app = Flask(__name__)
+
+@app.get("/")
+def home():
+    return (
+        "<!doctype html><html><head><meta charset='utf-8'><title>Flask — $domain</title></head>"
+        "<body style='font-family:system-ui;padding:40px'>"
+        "<h1>Flask is running</h1>"
+        "<p>Domain: <strong>$domain</strong></p>"
+        "<p>Deployed with V-zone Panel Application Manager.</p>"
+        "</body></html>"
+    )
+EOF
+				cat > "$app_dir/requirements.txt" << EOF
+Flask>=3.0
+gunicorn>=22.0
+EOF
+				chown -R "$user:$user" "$app_dir"
+			fi
+			pip_install_requirements "$venv_dir" "$app_dir"
+			[ -z "$entry_point" ] && entry_point="app:app"
+			start_cmd="$venv_dir/bin/gunicorn --bind 127.0.0.1:$port --workers $workers --timeout 120 $entry_point"
+			workdir="$app_dir"
+			;;
+		fastapi)
+			app_dir=$(resolve_app_dir "$app_directory" "private/apps/fastapi")
+			rm -rf "$venv_dir"
+			create_venv "$venv_dir"
+			runuser -u "$user" -- "$venv_dir/bin/pip" install "fastapi>=0.110" "uvicorn[standard]>=0.27" > /dev/null
+			if [ ! -f "$app_dir/main.py" ] && [ ! -f "$app_dir/app.py" ]; then
+				cat > "$app_dir/main.py" << EOF
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+
+app = FastAPI()
+
+@app.get("/", response_class=HTMLResponse)
+def home():
+    return """<!doctype html><html><head><meta charset='utf-8'><title>FastAPI — $domain</title></head>
+<body style='font-family:system-ui;padding:40px'>
+<h1>FastAPI is running</h1>
+<p>Domain: <strong>$domain</strong></p>
+<p>Deployed with V-zone Panel Application Manager.</p>
+</body></html>"""
+EOF
+				cat > "$app_dir/requirements.txt" << EOF
+fastapi>=0.110
+uvicorn[standard]>=0.27
+EOF
+				chown -R "$user:$user" "$app_dir"
+			fi
+			pip_install_requirements "$venv_dir" "$app_dir"
+			[ -z "$entry_point" ] && entry_point="main:app"
+			start_cmd="$venv_dir/bin/uvicorn $entry_point --host 127.0.0.1 --port $port --workers $workers --proxy-headers"
+			workdir="$app_dir"
+			;;
+		custom)
+			app_dir=$(resolve_app_dir "$app_directory" "private/apps/app")
+			[ -d "$app_dir" ] || check_result "$E_NOTEXIST" "Application directory not found"
+			rm -rf "$venv_dir"
+			create_venv "$venv_dir"
+			# Prefer requirements.txt; always ensure a production server
+			pip_install_requirements "$venv_dir" "$app_dir"
+			[ -z "$server_type" ] && server_type="wsgi"
+			server_type=$(echo "$server_type" | tr '[:upper:]' '[:lower:]')
+			[ -z "$entry_point" ] && entry_point="app:app"
+			if [ "$server_type" = "asgi" ]; then
+				runuser -u "$user" -- "$venv_dir/bin/pip" install "uvicorn[standard]>=0.27" > /dev/null
+				start_cmd="$venv_dir/bin/uvicorn $entry_point --host 127.0.0.1 --port $port --workers $workers --proxy-headers"
+			else
+				runuser -u "$user" -- "$venv_dir/bin/pip" install gunicorn > /dev/null
+				start_cmd="$venv_dir/bin/gunicorn --bind 127.0.0.1:$port --workers $workers --timeout 120 $entry_point"
+			fi
+			workdir="$app_dir"
+			display_type="python"
+			;;
+		*)
+			check_result "$E_INVALID" "Unknown Python framework: $framework"
+			;;
+	esac
+
+	env_file="$workdir/.env.hestia"
+	write_env_file "$env_file"
+
+elif [ "$apptype" = "nodejs" ]; then
+	command -v node > /dev/null 2>&1 || check_result "$E_NOTEXIST" "node is not installed"
+	command -v npm > /dev/null 2>&1 || check_result "$E_NOTEXIST" "npm is not installed"
+	port=$($BIN/v-get-web-app-port 3100 3999)
+	[ -z "$framework" ] && framework="express"
+	framework=$(echo "$framework" | tr '[:upper:]' '[:lower:]')
+	startup=$(parse_opt "startup")
+	app_directory=$(parse_opt "app_directory")
+	assert_safe_cmd "startup" "$startup"
+	install_deps=$(parse_opt "install_dependencies")
+	[ -z "$install_deps" ] && install_deps="yes"
+	template="nodejs"
+	backend_tpl="no-php"
+	display_type="nodejs"
+
+	case "$framework" in
+		express)
+			app_dir=$(resolve_app_dir "$app_directory" "private/apps/nodejs")
+			cat > "$app_dir/package.json" << EOF
+{
+  "name": "hestia-nodejs-app",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
+EOF
+			cat > "$app_dir/server.js" << EOF
+const express = require('express');
+const app = express();
+const port = process.env.PORT || $port;
+
+app.get('/', (req, res) => {
+  res.type('html').send(\`<!doctype html>
+<html><head><meta charset="utf-8"><title>Node.js — $domain</title>
+<style>body{font-family:system-ui;padding:40px;background:#0b1f33;color:#fff}
+.card{background:#132f4c;padding:24px;border-radius:12px;max-width:560px}
+a{color:#14b8a6}</style></head>
+<body><div class="card"><h1>Node.js is running</h1>
+<p>Domain: <strong>$domain</strong></p>
+<p>Port: <strong>\${port}</strong></p>
+<p>Deployed with V-zone Panel Application Manager.</p>
+</div></body></html>\`);
+});
+
+app.listen(port, '127.0.0.1', () => console.log('Listening on ' + port));
+EOF
+			chown -R "$user:$user" "$app_dir"
+			runuser -u "$user" -- bash -c "cd '$app_dir' && npm install --omit=dev" > /dev/null
+			start_cmd="/usr/bin/node server.js"
+			workdir="$app_dir"
+			;;
+		custom)
+			app_dir=$(resolve_app_dir "$app_directory" "private/apps/nodejs")
+			[ -d "$app_dir" ] || check_result "$E_NOTEXIST" "Application directory not found"
+			if [ "$install_deps" = "yes" ] && [ -f "$app_dir/package.json" ]; then
+				runuser -u "$user" -- bash -c "cd '$app_dir' && npm install --omit=dev" > /dev/null
+			fi
+			[ -z "$startup" ] && startup="npm start"
+			# Wrapper keeps WorkingDirectory + flexible start commands (npm/yarn/node)
+			cat > "$app_dir/.hestia-start.sh" << EOF
+#!/bin/bash
+set -e
+cd "$app_dir"
+exec $startup
+EOF
+			chown "$user:$user" "$app_dir/.hestia-start.sh"
+			chmod 750 "$app_dir/.hestia-start.sh"
+			start_cmd="$app_dir/.hestia-start.sh"
+			workdir="$app_dir"
+			;;
+		*)
+			check_result "$E_INVALID" "Unknown Node.js framework: $framework"
+			;;
+	esac
+
+	env_file="$workdir/.env.hestia"
+	write_env_file "$env_file"
+fi
+
+# Systemd unit — production-oriented defaults for shared hosting
+cat > "$unit_path" << EOF
+[Unit]
+Description=V-zone web app ($display_type) for $user/$domain
+After=network.target
+
+[Service]
+Type=simple
+User=$user
+Group=$user
+WorkingDirectory=$workdir
+EnvironmentFile=-$env_file
+Environment=PORT=$port
+Environment=HOME=$homedir
+ExecStart=$start_cmd
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillMode=mixed
+StandardOutput=journal
+StandardError=journal
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable "$service_id" > /dev/null 2>&1
+systemctl restart "$service_id" || check_result "$E_RESTART" "Failed to start $service_id"
+
+# Nginx proxy include
+conf_dir="$homedir/conf/web/$domain"
+mkdir -p "$conf_dir"
+echo "proxy_pass http://127.0.0.1:$port;" > "$conf_dir/nginx.app_port"
+echo "proxy_pass http://127.0.0.1:$port;" > "$conf_dir/nginx.ssl.app_port"
+chown root:root "$conf_dir/nginx.app_port" "$conf_dir/nginx.ssl.app_port" 2> /dev/null
+chmod 644 "$conf_dir/nginx.app_port" "$conf_dir/nginx.ssl.app_port"
+
+$BIN/v-change-web-domain-tpl "$user" "$domain" "$template" "no"
+if [ -n "$WEB_BACKEND" ]; then
+	$BIN/v-change-web-domain-backend-tpl "$user" "$domain" "$backend_tpl" "no" 2> /dev/null || true
+fi
+$BIN/v-rebuild-web-domain "$user" "$domain" "no"
+$BIN/v-restart-web
+
+echo "DOMAIN='$domain' TYPE='$display_type' PORT='$port' SERVICE='$service_id' APP_ROOT='$workdir' STATUS='running' TIME='$(date +%T)' DATE='$(date +%F)'" >> "$apps_conf"
+
+#----------------------------------------------------------#
+#                       Hestia                             #
+#----------------------------------------------------------#
+
+$BIN/v-log-action "$user" "Info" "Web" "Web application installed (Type: $display_type, Domain: $domain, Port: $port)."
+log_event "$OK" "$ARGUMENTS"
+exit

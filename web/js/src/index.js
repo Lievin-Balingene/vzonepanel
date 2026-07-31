@@ -28,7 +28,9 @@ import handleTabPanels from './tabPanels';
 import handleToggleAdvanced from './toggleAdvanced';
 import handleUnlimitedInput from './unlimitedInput';
 import initWebTerminal from './webTerminal';
+import initVzShell from './vzShell';
 
+initVzShell();
 initListeners();
 focusFirstInput();
 

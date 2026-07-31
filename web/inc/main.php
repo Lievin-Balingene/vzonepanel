@@ -284,26 +284,8 @@ function top_panel($user, $TAB) {
 		$_SESSION["userSortOrder"] = $panel[$user]["PREF_UI_SORT"];
 	}
 
-	// Set home location URLs
-	if ($_SESSION["userContext"] === "admin" && empty($_SESSION["look"])) {
-		// Display users list for administrators unless they are impersonating a user account
-		$home_url = "/list/user/";
-	} else {
-		// Set home location URL based on available package features from account
-		if ($panel[$user]["WEB_DOMAINS"] != "0") {
-			$home_url = "/list/web/";
-		} elseif ($panel[$user]["DNS_DOMAINS"] != "0") {
-			$home_url = "/list/dns/";
-		} elseif ($panel[$user]["MAIL_DOMAINS"] != "0") {
-			$home_url = "/list/mail/";
-		} elseif ($panel[$user]["DATABASES"] != "0") {
-			$home_url = "/list/db/";
-		} elseif ($panel[$user]["CRON_JOBS"] != "0") {
-			$home_url = "/list/cron/";
-		} elseif ($panel[$user]["BACKUPS"] != "0") {
-			$home_url = "/list/backups/";
-		}
-	}
+	// Set home location URL (V-zone Panel dashboard)
+	$home_url = "/list/dashboard/";
 
 	include dirname(__FILE__) . "/../templates/includes/panel.php";
 	return $panel;

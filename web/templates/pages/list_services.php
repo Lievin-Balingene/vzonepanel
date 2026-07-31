@@ -1,3 +1,17 @@
+<?php
+$svc_total = is_array($data) ? count($data) : 0;
+$svc_running = 0;
+if (is_array($data)) {
+	foreach ($data as $svc) {
+		if (($svc["STATE"] ?? "") === "running") {
+			$svc_running++;
+		}
+	}
+}
+$svc_stopped = $svc_total - $svc_running;
+$load_avg = $sys["sysinfo"]["LOADAVERAGE"] ?? "";
+$uptime_human = isset($sys["sysinfo"]["UPTIME"]) ? humanize_time($sys["sysinfo"]["UPTIME"]) : "";
+?>
 <!-- Begin toolbar -->
 <div class="toolbar">
 	<div class="toolbar-inner">
@@ -48,15 +62,35 @@
 
 <div class="container">
 
+	<div class="vz-page-hero">
+		<div>
+			<h1 class="vz-page-title"><?= tohtml(_("Monitoring")) ?></h1>
+			<p class="vz-page-subtitle"><?= tohtml(_("Server services and health")) ?></p>
+		</div>
+		<div class="vz-stat-pills">
+			<span class="vz-stat-pill"><strong><?= (int) $svc_total ?></strong> <?= tohtml(_("services")) ?></span>
+			<span class="vz-stat-pill is-success"><strong><?= (int) $svc_running ?></strong> <?= tohtml(_("running")) ?></span>
+			<?php if ($svc_stopped > 0) { ?>
+				<span class="vz-stat-pill is-danger"><strong><?= (int) $svc_stopped ?></strong> <?= tohtml(_("stopped")) ?></span>
+			<?php } ?>
+			<?php if ($load_avg !== "") { ?>
+				<span class="vz-stat-pill is-info"><strong><?= tohtml($load_avg) ?></strong> <?= tohtml(_("load")) ?></span>
+			<?php } ?>
+			<?php if ($uptime_human !== "") { ?>
+				<span class="vz-stat-pill"><strong><?= tohtml($uptime_human) ?></strong> <?= tohtml(_("uptime")) ?></span>
+			<?php } ?>
+		</div>
+	</div>
+
 	<div class="server-summary">
 		<div class="server-summary-icon">
 			<i class="fas fa-server"></i>
 		</div>
 		<div class="server-summary-content">
-			<h1 class="server-summary-title"><?= tohtml($sys["sysinfo"]["HOSTNAME"]) ?></h1>
+			<h2 class="server-summary-title"><?= tohtml($sys["sysinfo"]["HOSTNAME"]) ?></h2>
 			<ul class="server-summary-list">
 				<li class="server-summary-item">
-					<span class="server-summary-list-label">Hestia Control Panel</span>
+					<span class="server-summary-list-label"><?= htmlspecialchars($_SESSION["APP_NAME"] ?? "V-zone Panel") ?></span>
 					<span class="server-summary-list-value">
 						<?php if ($sys["sysinfo"]["RELEASE"] == "release") { ?>
 							<i class="fas fa-cube" title="<?= tohtml( _("Production Release")) ?>"></i>
@@ -87,8 +121,6 @@
 			</ul>
 		</div>
 	</div>
-
-	<h1 class="u-text-center u-hide-desktop u-pr30 u-mb20 u-pl30"><?= tohtml( _("Services")) ?></h1>
 
 	<div class="units-table js-units-container">
 		<div class="units-table-header">

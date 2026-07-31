@@ -14,6 +14,9 @@
 				<a href="/add/webapp/?<?= tohtml(http_build_query(["domain" => $v_domain])) ?>" class="button button-secondary">
 					<i class="fas fa-magic icon-blue"></i><?= tohtml( _("Quick Install App")) ?>
 				</a>
+				<a href="/list/apps/" class="button button-secondary">
+					<i class="fas fa-cubes icon-blue"></i><?= tohtml( _("Application Manager")) ?>
+				</a>
 			<?php } ?>
 			<button type="submit" class="button" form="main-form">
 				<i class="fas fa-floppy-disk icon-purple"></i><?= tohtml( _("Save")) ?>
@@ -48,11 +51,26 @@
 		<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
 		<input type="hidden" name="save" value="save">
 
-		<div class="form-container">
-			<h1 class="u-mb20"><?= tohtml( _("Edit Web Domain")) ?></h1>
+		<div class="form-container vz-form-card">
+			<div class="vz-page-hero u-mb20" style="margin-bottom: 20px">
+				<div>
+					<h1 class="vz-page-title"><?= tohtml(_("Edit Web Domain")) ?></h1>
+					<p class="vz-page-subtitle"><?= tohtml(trim($v_domain, "'")) ?></p>
+				</div>
+				<div class="vz-web-badges">
+					<span class="vz-badge <?= $v_ssl == "yes" ? "vz-badge-success" : "vz-badge-danger" ?>">
+						SSL <?= $v_ssl == "yes" ? _("On") : _("Off") ?>
+					</span>
+					<?php if ($v_letsencrypt == "yes" || $v_letsencrypt == "on") { ?>
+						<span class="vz-badge vz-badge-info">Let's Encrypt</span>
+					<?php } ?>
+				</div>
+			</div>
 			<?php show_alert_message($_SESSION); ?>
+			<div class="vz-form-section">
+				<h2 class="vz-form-section-title"><?= tohtml(_("Domain details")) ?></h2>
 			<div class="u-mb10">
-				<label for="v_domain" class="form-label"><?= tohtml( _("Domain")) ?></label>
+				<label for="v_domain" class="form-label"><?= tohtml(_("Domain")) ?></label>
 				<input type="text" class="form-control" name="v_domain" id="v_domain" value="<?= tohtml(trim($v_domain, "'")) ?>" disabled required>
 				<input type="hidden" name="v_domain" value="<?= tohtml(trim($v_domain, "'")) ?>">
 			</div>
@@ -67,7 +85,7 @@
 				</div>
 			<?php } ?>
 			<div class="u-mb20">
-				<label for="v_ip" class="form-label"><?= tohtml( _("IP Address")) ?></label>
+				<label for="v_ip" class="form-label"><?= tohtml(_("IP Address")) ?></label>
 				<select class="form-select" name="v_ip" id="v_ip">
 					<?php
 						foreach ($ips as $ip => $value) {
@@ -78,8 +96,11 @@
 					?>
 				</select>
 			</div>
+			</div>
+			<div class="vz-form-section">
+				<h2 class="vz-form-section-title"><?= tohtml(_("Statistics & security")) ?></h2>
 			<div class="u-mb10">
-				<label for="v_stats" class="form-label"><?= tohtml( _("Web Statistics")) ?></label>
+				<label for="v_stats" class="form-label"><?= tohtml(_("Web Statistics")) ?></label>
 				<select class="form-select js-stats-select" name="v_stats" id="v_stats">
 					<?php
 						foreach ($stats as $key => $value) {
@@ -444,6 +465,7 @@
 						<?= tohtml( _("Add FTP account")) ?>
 					</button>
 				<?php } ?>
+			</div>
 			</div>
 		</div>
 

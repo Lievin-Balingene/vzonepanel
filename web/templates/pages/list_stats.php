@@ -47,11 +47,18 @@
 
 <div class="container">
 
+	<div class="vz-page-hero">
+		<div>
+			<h1 class="vz-page-title"><?= tohtml(_("Statistics")) ?></h1>
+			<p class="vz-page-subtitle"><?= tohtml(_("Monthly usage and resource overview.")) ?></p>
+		</div>
+	</div>
+
 	<!-- Begin statistics list item loop -->
 	<div class="stats">
 		<?php foreach ($data as $key => $value) {
 		++$i; ?>
-			<div class="stats-item">
+			<div class="stats-item vz-card">
 
 				<div class="stats-item-header">
 					<i class="fas fa-chart-bar icon-dim stats-item-header-icon u-mr10"></i>

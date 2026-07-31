@@ -1,8 +1,8 @@
 {
-	"name": "hestia",
+	"name": "vzone-panel",
 	"private": true,
 	"version": "1.10.0~alpha",
-	"description": "An open-source Linux web server control panel.",
+	"description": "V-zone Panel — modern hosting control panel based on HestiaCP.",
 	"repository": "https://github.com/hestiacp/hestiacp",
 	"license": "GPL-3.0-or-later",
 	"type": "module",

@@ -64,39 +64,7 @@ if (isset($_SESSION["user"])) {
 
 	// Set view based on account properties
 	if (empty($_GET["loginas"])) {
-		// Default view to Users list for administrator accounts
-		if ($_SESSION["userContext"] === "admin" && !isset($_SESSION["look"])) {
-			header("Location: /list/user/");
-			exit();
-		}
-
-		// Obtain account properties
-		$v_user = quoteshellarg(
-			$_SESSION[
-				$_SESSION["userContext"] === "admin" && $_SESSION["look"] !== "" ? "look" : "user"
-			],
-		);
-
-		exec(HESTIA_CMD . "v-list-user " . $v_user . " json", $output, $return_var);
-		$data = json_decode(implode("", $output), true);
-		unset($output);
-
-		// Determine package features and land user at the first available page
-		if ($data[$user_plain]["WEB_DOMAINS"] !== "0") {
-			header("Location: /list/web/");
-		} elseif ($data[$user_plain]["DNS_DOMAINS"] !== "0") {
-			header("Location: /list/dns/");
-		} elseif ($data[$user_plain]["MAIL_DOMAINS"] !== "0") {
-			header("Location: /list/mail/");
-		} elseif ($data[$user_plain]["DATABASES"] !== "0") {
-			header("Location: /list/db/");
-		} elseif ($data[$user_plain]["CRON_JOBS"] !== "0") {
-			header("Location: /list/cron/");
-		} elseif ($data[$user_plain]["BACKUPS"] !== "0") {
-			header("Location: /list/backup/");
-		} else {
-			header("Location: /error/");
-		}
+		header("Location: /list/dashboard/");
 		exit();
 	}
 
@@ -366,25 +334,7 @@ function authenticate_user($user, $password, $twofa = "") {
 					unset($_SESSION["request_uri"]);
 					exit();
 				} else {
-					if ($_SESSION["userContext"] === "admin") {
-						header("Location: /list/user/");
-					} else {
-						if ($data[$user]["WEB_DOMAINS"] != "0") {
-							header("Location: /list/web/");
-						} elseif ($data[$user]["DNS_DOMAINS"] != "0") {
-							header("Location: /list/dns/");
-						} elseif ($data[$user]["MAIL_DOMAINS"] != "0") {
-							header("Location: /list/mail/");
-						} elseif ($data[$user]["DATABASES"] != "0") {
-							header("Location: /list/db/");
-						} elseif ($data[$user]["CRON_JOBS"] != "0") {
-							header("Location: /list/cron/");
-						} elseif ($data[$user]["BACKUPS"] != "0") {
-							header("Location: /list/backup/");
-						} else {
-							header("Location: /error/");
-						}
-					}
+					header("Location: /list/dashboard/");
 					exit();
 				}
 			}

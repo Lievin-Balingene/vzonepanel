@@ -2,7 +2,7 @@
 use function Hestiacp\quoteshellarg\quoteshellarg;
 
 ob_start();
-$TAB = "WEB";
+$TAB = "APPS";
 
 // Main include
 include $_SERVER["DOCUMENT_ROOT"] . "/inc/main.php";
@@ -47,7 +47,9 @@ if (!empty($_GET["app"])) {
 
 			if (!$info->isInstallable()) {
 				$_SESSION["error_msg"] = sprintf(
-					_("Unable to install %s, required php version is not available."),
+					$info->runtime === "php"
+						? _("Unable to install %s, required php version is not available.")
+						: _("Unable to install %s. Required runtime is not available."),
 					$app,
 				);
 			} else {
@@ -75,7 +77,12 @@ if (!empty($_POST["ok"]) && !empty($app)) {
 
 			$_SESSION["ok_msg"] = sprintf(_("%s installed successfully."), htmlspecialchars($app));
 
-			header("Location: /add/webapp/?domain=" . $v_domain);
+			$runtime = isset($app_installer) ? $app_installer->getInfo()->runtime : "php";
+			if (in_array($runtime, ["python", "nodejs"], true)) {
+				header("Location: /list/apps/");
+			} else {
+				header("Location: /add/webapp/?domain=" . $v_domain);
+			}
 			exit();
 		} catch (Exception $e) {
 			$_SESSION["error_msg"] = $e->getMessage();

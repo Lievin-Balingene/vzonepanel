@@ -18,11 +18,16 @@ class InstallerInfo
         public readonly string $version,
         public readonly string $thumbnail,
         public readonly array $supportedPHPVersions,
+        public readonly string $runtime = 'php',
     ) {
     }
 
     public function isInstallable(): bool
     {
+        if ($this->runtime === 'python' || $this->runtime === 'nodejs') {
+            return true;
+        }
+
         return !empty($this->supportedPHPVersions);
     }
 
@@ -36,7 +41,8 @@ class InstallerInfo
             (string) $info['group'],
             (string) $info['version'],
             (string) $info['thumbnail'],
-            (array) $info['supportedPHPVersions'],
+            (array) ($info['supportedPHPVersions'] ?? []),
+            (string) ($info['runtime'] ?? 'php'),
         );
     }
 }

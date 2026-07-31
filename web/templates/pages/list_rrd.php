@@ -22,6 +22,13 @@
 <!-- End toolbar -->
 
 <div class="container">
+	<div class="vz-page-hero">
+		<div>
+			<h1 class="vz-page-title"><?= tohtml(_("Performance")) ?></h1>
+			<p class="vz-page-subtitle"><?= tohtml(_("Task Monitor")) ?></p>
+		</div>
+	</div>
+
 	<div class="form-container form-container-wide">
 		<!-- Begin graph list item loop -->
 		<?php foreach ($data as $key => $value) { ?>

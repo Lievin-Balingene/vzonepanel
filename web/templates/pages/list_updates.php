@@ -26,7 +26,12 @@
 
 <div class="container">
 
-	<h1 class="u-text-center u-hide-desktop u-mt20 u-pr30 u-mb20 u-pl30"><?= tohtml( _("Updates")) ?></h1>
+	<div class="vz-page-hero">
+		<div>
+			<h1 class="vz-page-title"><?= tohtml(_("Updates")) ?></h1>
+			<p class="vz-page-subtitle"><?= tohtml(_("Package versions and automatic update settings.")) ?></p>
+		</div>
+	</div>
 
 	<div class="units-table js-units-container">
 		<div class="units-table-header">

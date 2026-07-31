@@ -21,11 +21,16 @@
 		<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
 		<input type="hidden" name="save" value="save">
 
-		<div class="form-container">
-			<h1 class="u-mb20"><?= tohtml( _("Edit Database")) ?></h1>
+		<div class="form-container vz-form-card">
+			<div class="vz-page-hero u-mb20">
+				<div>
+					<h1 class="vz-page-title"><?= tohtml(_("Edit Database")) ?></h1>
+					<p class="vz-page-subtitle"><?= tohtml(trim($v_database, "'")) ?></p>
+				</div>
+			</div>
 			<?php show_alert_message($_SESSION); ?>
 			<div class="u-mb10">
-				<label for="v_database" class="form-label"><?= tohtml( _("Database")) ?></label>
+				<label for="v_database" class="form-label"><?= tohtml(_("Database")) ?></label>
 				<input type="text" class="form-control js-db-hint-database-name" name="v_database" id="v_database" value="<?= tohtml(trim($v_database, "'")) ?>" disabled>
 				<small class="hint"></small>
 			</div>

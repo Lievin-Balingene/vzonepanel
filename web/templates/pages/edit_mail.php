@@ -31,11 +31,16 @@
 		<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
 		<input type="hidden" name="save" value="save">
 
-		<div class="form-container">
-			<h1 class="u-mb20"><?= tohtml( _("Edit Mail Domain")) ?></h1>
+		<div class="form-container vz-form-card">
+			<div class="vz-page-hero u-mb20">
+				<div>
+					<h1 class="vz-page-title"><?= tohtml(_("Edit Mail Domain")) ?></h1>
+					<p class="vz-page-subtitle"><?= tohtml(trim($v_domain, "'")) ?></p>
+				</div>
+			</div>
 			<?php show_alert_message($_SESSION); ?>
 			<div class="u-mb20">
-				<label for="v_domain" class="form-label"><?= tohtml( _("Domain")) ?></label>
+				<label for="v_domain" class="form-label"><?= tohtml(_("Domain")) ?></label>
 				<input type="text" class="form-control" name="v_domain" id="v_domain" value="<?= tohtml(trim($v_domain, "'")) ?>" disabled required>
 				<input type="hidden" name="v_domain" value="<?= tohtml(trim($v_domain, "'")) ?>">
 			</div>

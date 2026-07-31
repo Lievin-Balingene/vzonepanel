@@ -1,6 +1,20 @@
 <link rel="alternate icon" href="/images/favicon.png" type="image/png">
 <link rel="icon" href="/images/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/themes/default.min.css?<?= JS_LATEST_UPDATE ?>">
+<script>
+	(function () {
+		try {
+			var t = localStorage.getItem('vz-theme');
+			if (t === 'dark') {
+				document.documentElement.dataset.theme = 'dark';
+				document.documentElement.classList.add('theme-dark');
+			}
+		} catch (e) {}
+	})();
+</script>
 
 <?php
 $selected_theme = !empty($_SESSION["userTheme"]) ? $_SESSION["userTheme"] : $_SESSION["THEME"];

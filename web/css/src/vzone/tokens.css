@@ -1,0 +1,146 @@
+/* V-zone Panel — Design tokens
+   ========================================================================== */
+
+:root {
+	--animate-duration: 280ms;
+	--font-family: "Outfit", "Segoe UI", sans-serif;
+	--font-family-monospace: "JetBrains Mono", "Inconsolata", ui-monospace, monospace;
+
+	/* Brand */
+	--vz-turquoise: #0d9488;
+	--vz-turquoise-bright: #14b8a6;
+	--vz-turquoise-soft: #ccfbf1;
+	--vz-turquoise-deep: #0f766e;
+	--vz-navy: #0b1f33;
+	--vz-navy-mid: #132f4c;
+	--vz-navy-soft: #1e3a5f;
+
+	/* Surfaces (light) */
+	--color-background: #f4f7fb;
+	--color-surface: #ffffff;
+	--color-surface-2: #eef2f7;
+	--color-surface-hover: #e8eef5;
+	--color-border: #d8e0ea;
+	--color-border-strong: #c1ccd9;
+
+	/* Text */
+	--color-text: #3d4f63;
+	--color-text-muted: #6b7c90;
+	--color-text-heading: #0b1f33;
+	--color-text-inverse: #ffffff;
+	--color-text-link: var(--vz-turquoise-deep);
+	--color-text-link-hover: var(--vz-turquoise);
+
+	/* Accents / status */
+	--color-primary: var(--vz-turquoise);
+	--color-primary-hover: var(--vz-turquoise-bright);
+	--color-primary-soft: var(--vz-turquoise-soft);
+	--color-danger: #e11d48;
+	--color-danger-soft: #ffe4e6;
+	--color-success: #059669;
+	--color-success-soft: #d1fae5;
+	--color-warning: #d97706;
+	--color-warning-soft: #fef3c7;
+	--color-info: #0284c7;
+	--color-info-soft: #e0f2fe;
+
+	/* Alerts */
+	--alert-border-color: transparent;
+	--alert-box-shadow: 0 8px 24px rgb(11 31 51 / 12%);
+	--alert-text-shadow: none;
+	--alert-info-color: var(--color-info);
+	--alert-danger-color: var(--color-danger);
+	--alert-success-color: var(--color-success);
+
+	/* Icons */
+	--icon-color-teal: var(--vz-turquoise);
+	--icon-color-purple: #7c3aed;
+	--icon-color-maroon: #be123c;
+	--icon-color-red: var(--color-danger);
+	--icon-color-green: var(--color-success);
+	--icon-color-orange: var(--color-warning);
+	--icon-color-blue: var(--color-info);
+	--icon-color-lightblue: #38bdf8;
+
+	/* Layout shell */
+	--sidebar-width: 260px;
+	--sidebar-collapsed-width: 76px;
+	--topbar-height: 64px;
+	--shell-gap: 20px;
+	--content-max-width: 1280px;
+
+	--sidebar-bg: var(--vz-navy);
+	--sidebar-bg-elevated: var(--vz-navy-mid);
+	--sidebar-text: rgb(255 255 255 / 72%);
+	--sidebar-text-active: #ffffff;
+	--sidebar-accent: var(--vz-turquoise-bright);
+	--sidebar-border: rgb(255 255 255 / 8%);
+
+	--topbar-bg: rgb(255 255 255 / 82%);
+	--topbar-border: var(--color-border);
+	--topbar-shadow: 0 1px 0 rgb(11 31 51 / 4%);
+
+	/* Legacy aliases (Hestia class compatibility) */
+	--top-bar-background: var(--sidebar-bg);
+	--top-bar-box-shadow: none;
+	--top-bar-border-bottom: none;
+
+	/* Elevation & shape */
+	--border-radius-base: 10px;
+	--border-radius-sm: 8px;
+	--border-radius-lg: 16px;
+	--border-radius-xl: 20px;
+	--shadow-xs: 0 1px 2px rgb(11 31 51 / 4%);
+	--shadow-sm: 0 4px 12px rgb(11 31 51 / 6%);
+	--shadow-md: 0 10px 28px rgb(11 31 51 / 8%);
+	--shadow-lg: 0 18px 48px rgb(11 31 51 / 12%);
+
+	/* Charts */
+	--chart-label-color: var(--color-text-muted);
+	--chart-grid-color: var(--color-border);
+	--chart-line-1-color: var(--vz-turquoise);
+	--chart-line-2-color: var(--color-info);
+	--chart-line-3-color: var(--color-success);
+
+	/* Motion */
+	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--transition-fast: 150ms var(--ease-out);
+	--transition-base: 220ms var(--ease-out);
+}
+
+[data-theme="dark"],
+html.theme-dark {
+	--color-background: #07111c;
+	--color-surface: #0f1c2b;
+	--color-surface-2: #152536;
+	--color-surface-hover: #1a2d42;
+	--color-border: #243447;
+	--color-border-strong: #314860;
+
+	--color-text: #c5d0dc;
+	--color-text-muted: #8494a7;
+	--color-text-heading: #f1f5f9;
+	--color-text-link: var(--vz-turquoise-bright);
+	--color-text-link-hover: #5eead4;
+
+	--color-primary-soft: rgb(20 184 166 / 16%);
+	--color-danger-soft: rgb(225 29 72 / 16%);
+	--color-success-soft: rgb(5 150 105 / 16%);
+	--color-warning-soft: rgb(217 119 6 / 16%);
+	--color-info-soft: rgb(2 132 199 / 16%);
+
+	--sidebar-bg: #050d16;
+	--sidebar-bg-elevated: #0b1724;
+	--topbar-bg: rgb(15 28 43 / 86%);
+	--topbar-shadow: 0 1px 0 rgb(0 0 0 / 35%);
+
+	--shadow-xs: 0 1px 2px rgb(0 0 0 / 25%);
+	--shadow-sm: 0 4px 14px rgb(0 0 0 / 28%);
+	--shadow-md: 0 12px 32px rgb(0 0 0 / 35%);
+	--shadow-lg: 0 20px 50px rgb(0 0 0 / 45%);
+
+	--chart-label-color: var(--color-text-muted);
+	--chart-grid-color: var(--color-border);
+
+	color-scheme: dark;
+}

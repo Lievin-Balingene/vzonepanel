@@ -1,0 +1,50 @@
+#!/bin/bash
+# info: delete web application for a domain
+# options: USER DOMAIN
+# example: v-delete-web-app admin example.com
+
+user=$1
+domain=$2
+
+# shellcheck source=/etc/hestiacp/hestia.conf
+source /etc/hestiacp/hestia.conf
+# shellcheck source=/usr/local/hestia/func/main.sh
+source $HESTIA/func/main.sh
+# shellcheck source=/usr/local/hestia/func/domain.sh
+source $HESTIA/func/domain.sh
+source_conf "$HESTIA/conf/hestia.conf"
+
+check_args '2' "$#" 'USER DOMAIN'
+is_format_valid 'user' 'domain'
+is_object_valid 'user' 'USER' "$user"
+
+apps_conf="$USER_DATA/web-apps.conf"
+[ -e "$apps_conf" ] || check_result "$E_NOTEXIST" "No web apps configured"
+
+line=$(grep "DOMAIN='$domain'" "$apps_conf" | head -n1)
+[ -n "$line" ] || check_result "$E_NOTEXIST" "Web app not found for $domain"
+eval "$line"
+
+if [ -n "$SERVICE" ]; then
+	systemctl stop "$SERVICE" > /dev/null 2>&1 || true
+	systemctl disable "$SERVICE" > /dev/null 2>&1 || true
+	rm -f "/etc/systemd/system/${SERVICE}.service"
+	systemctl daemon-reload > /dev/null 2>&1 || true
+fi
+
+homedir=$(getent passwd "$user" | cut -f6 -d:)
+rm -f "$homedir/conf/web/$domain/nginx.app_port" "$homedir/conf/web/$domain/nginx.ssl.app_port"
+
+# Revert to default template if still on app template
+if is_object_valid 'web' 'DOMAIN' "$domain"; then
+	get_domain_values 'web'
+	if [ "$TPL" = "django" ] || [ "$TPL" = "nodejs" ]; then
+		$BIN/v-change-web-domain-tpl "$user" "$domain" "default" "yes"
+	fi
+fi
+
+sed -i "/DOMAIN='$domain'/d" "$apps_conf"
+
+$BIN/v-log-action "$user" "Info" "Web" "Web application removed (Domain: $domain)."
+log_event "$OK" "$ARGUMENTS"
+exit

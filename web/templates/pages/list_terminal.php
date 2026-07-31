@@ -11,7 +11,13 @@
 <!-- End toolbar -->
 
 <div class="container">
-	<div class="form-container form-container-wide">
+	<div class="vz-page-hero">
+		<div>
+			<h1 class="vz-page-title"><?= tohtml(_("Web Terminal")) ?></h1>
+			<p class="vz-page-subtitle"><?= tohtml(_("Secure shell access in your browser.")) ?></p>
+		</div>
+	</div>
+	<div class="form-container form-container-wide vz-form-card">
 		<div class="js-web-terminal web-terminal"></div>
 	</div>
 </div>

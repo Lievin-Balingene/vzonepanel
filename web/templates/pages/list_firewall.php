@@ -1,3 +1,15 @@
+<?php
+$fw_total = is_array($data) ? count($data) : 0;
+$fw_suspended = 0;
+if (is_array($data)) {
+	foreach ($data as $rule) {
+		if (($rule["SUSPENDED"] ?? "") === "yes") {
+			$fw_suspended++;
+		}
+	}
+}
+$fw_active = $fw_total - $fw_suspended;
+?>
 <!-- Begin toolbar -->
 <div class="toolbar">
 	<div class="toolbar-inner">
@@ -5,8 +17,8 @@
 			<a class="button button-secondary button-back js-button-back" href="/list/server/">
 				<i class="fas fa-arrow-left icon-blue"></i><?= tohtml(_("Back")) ?>
 			</a>
-			<a href="/add/firewall/" class="button button-secondary js-button-create">
-				<i class="fas fa-circle-plus icon-green"></i><?= tohtml(_("Add Rule")) ?>
+			<a href="/add/firewall/" class="button js-button-create">
+				<i class="fas fa-plus"></i><?= tohtml(_("Add Rule")) ?>
 			</a>
 			<?php if (!empty($_SESSION["FIREWALL_EXTENSION"])): ?>
 				<a class="button button-secondary" href="/list/firewall/banlist/">
@@ -53,14 +65,50 @@
 					</button>
 				</form>
 			</div>
+			<div class="toolbar-search">
+				<form action="/search/" method="get">
+					<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
+					<input type="search" class="form-control js-search-input js-vz-live-filter" name="q" value="<?= tohtml(
+     	$_POST["q"] ?? "",
+     ) ?>" placeholder="<?= tohtml(_("Filter rules…")) ?>" title="<?= tohtml(_("Search")) ?>" autocomplete="off">
+					<button type="submit" class="toolbar-input-submit" title="<?= tohtml(_("Search")) ?>">
+						<i class="fas fa-magnifying-glass"></i>
+					</button>
+				</form>
+			</div>
 		</div>
 	</div>
 </div>
 <!-- End toolbar -->
 
-<div class="container">
+<div class="container" x-data="vzFirewallList">
 
-	<h1 class="u-text-center u-hide-desktop u-mt20 u-pr30 u-mb20 u-pl30"><?= tohtml(_("Firewall Rules")) ?></h1>
+	<div class="vz-page-hero">
+		<div>
+			<h1 class="vz-page-title"><?= tohtml(_("Firewall")) ?></h1>
+			<p class="vz-page-subtitle"><?= tohtml(_("Manage firewall rules and access control.")) ?></p>
+		</div>
+		<div class="vz-stat-pills">
+			<span class="vz-stat-pill"><strong><?= (int) $fw_total ?></strong> <?= tohtml(_("rules")) ?></span>
+			<span class="vz-stat-pill is-success"><strong><?= (int) $fw_active ?></strong> <?= tohtml(_("active")) ?></span>
+			<?php if ($fw_suspended > 0) { ?>
+				<span class="vz-stat-pill is-danger"><strong><?= (int) $fw_suspended ?></strong> <?= tohtml(_("suspended")) ?></span>
+			<?php } ?>
+		</div>
+	</div>
+
+	<div class="vz-filter-bar">
+		<button type="button" class="vz-chip" :class="filter === 'all' && 'active'" @click="filter = 'all'">
+			<?= tohtml(_("All")) ?>
+		</button>
+		<button type="button" class="vz-chip" :class="filter === 'active' && 'active'" @click="filter = 'active'">
+			<?= tohtml(_("Active")) ?>
+		</button>
+		<button type="button" class="vz-chip" :class="filter === 'suspended' && 'active'" @click="filter = 'suspended'">
+			<?= tohtml(_("Suspended")) ?>
+		</button>
+		<span class="vz-filter-count" x-text="visibleCountLabel"></span>
+	</div>
 
 	<div class="units-table js-units-container">
 		<div class="units-table-header">
@@ -78,7 +126,9 @@
 		</div>
 
 		<!-- Begin firewall chain/action list item loop -->
-		<?php foreach ($data as $key => $value) {
+		<?php
+  $i = 0;
+  foreach ($data as $key => $value) {
 
   	++$i;
   	if ($i === 1) {
@@ -106,15 +156,34 @@
   		$spnd_icon_class = "icon-highlight";
   		$spnd_confirmation = _("Are you sure you want to suspend rule #%s?");
   	}
+  	$row_status = $data[$key]["SUSPENDED"] == "yes" ? "suspended" : "active";
+  	$search_name = strtolower(
+  		$key .
+  			" " .
+  			($data[$key]["ACTION"] ?? "") .
+  			" " .
+  			($data[$key]["PROTOCOL"] ?? "") .
+  			" " .
+  			($data[$key]["PORT"] ?? "") .
+  			" " .
+  			($data[$key]["IP"] ?? "") .
+  			" " .
+  			($data[$key]["COMMENT"] ?? ""),
+  	);
   	?>
 			<div class="units-table-row <?php if ($status == "suspended") {
    	echo "disabled";
-   } ?> js-unit"
+   } ?> js-unit vz-filter-row"
 				data-sort-action="<?= tohtml($data[$key]["ACTION"]) ?>"
 				data-sort-protocol="<?= tohtml($data[$key]["PROTOCOL"]) ?>"
 				data-sort-port="<?= tohtml($data[$key]["PORT"]) ?>"
 				data-sort-ip="<?= tohtml(str_replace(".", "", $data[$key]["IP"])) ?>"
-				data-sort-comment="<?= tohtml($data[$key]["COMMENT"]) ?>">
+				data-sort-comment="<?= tohtml($data[$key]["COMMENT"]) ?>"
+				data-status="<?= tohtml($row_status) ?>"
+				data-name="<?= tohtml($search_name) ?>"
+				x-show="isVisible($el)"
+				x-transition.opacity
+			>
 				<div class="units-table-cell">
 					<div>
 						<input id="check<?= tohtml($i) ?>" class="js-unit-checkbox" type="checkbox" title="<?= tohtml(_("Select")) ?>" name="rule[]" value="<?= tohtml($key) ?>">

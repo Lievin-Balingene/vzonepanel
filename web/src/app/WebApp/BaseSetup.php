@@ -27,13 +27,17 @@ abstract class BaseSetup implements InstallerInterface
 
     public function getInfo(): InstallerInfo
     {
-        $supportedPHPVersions = $this->appcontext->getSupportedPHPVersions(
-            $this->config['server']['php']['supported'],
-        );
+        $supportedPHPVersions = [];
+        if (!empty($this->config['server']['php']['supported'])) {
+            $supportedPHPVersions = $this->appcontext->getSupportedPHPVersions(
+                $this->config['server']['php']['supported'],
+            );
+        }
 
         return InstallerInfo::fromArray([
             ...$this->info,
             'supportedPHPVersions' => $supportedPHPVersions,
+            'runtime' => $this->info['runtime'] ?? 'php',
         ]);
     }
 
@@ -49,13 +53,13 @@ abstract class BaseSetup implements InstallerInterface
 
         $this->retrieveResources($target, $options);
         $this->setupDatabase($target->database);
-        $this->setupWebServer($target->domain->domainName, $options['php_version']);
+        $this->setupWebServer($target->domain->domainName, $options['php_version'] ?? null);
         $this->setupApplication($target, $options);
     }
 
     abstract protected function setupApplication(InstallationTarget $target, array $options): void;
 
-    private function setupWebServer(string $domainName, string $phpVersion): void
+    private function setupWebServer(string $domainName, ?string $phpVersion): void
     {
         if ($_SESSION['WEB_SYSTEM'] === 'nginx') {
             if (isset($this->config['server']['nginx']['template'])) {
@@ -63,8 +67,6 @@ abstract class BaseSetup implements InstallerInterface
                     $domainName,
                     $this->config['server']['nginx']['template'],
                 );
-            } else {
-                $this->appcontext->changeWebTemplate($domainName, 'default');
             }
         } else {
             if (isset($this->config['server']['apache2']['template'])) {
@@ -72,22 +74,24 @@ abstract class BaseSetup implements InstallerInterface
                     $domainName,
                     $this->config['server']['apache2']['template'],
                 );
-            } else {
-                $this->appcontext->changeWebTemplate($domainName, 'default');
             }
         }
         if ($_SESSION['WEB_BACKEND'] === 'php-fpm') {
-            if (isset($this->config['server']['php']['supported'])) {
+            if (!empty($this->config['server']['php']['supported']) && !empty($phpVersion)) {
                 $supportedPHPVersions = $this->appcontext->getSupportedPHPVersions(
                     $this->config['server']['php']['supported'],
                 );
                 if (empty($supportedPHPVersions)) {
                     throw new RuntimeException('Required PHP version is not supported');
                 }
-                //convert from x.x to PHP-x_x to accepted.
                 $this->appcontext->changeBackendTemplate(
                     $domainName,
                     'PHP-' . str_replace('.', '_', $phpVersion),
+                );
+            } elseif (!empty($this->config['server']['backend'])) {
+                $this->appcontext->changeBackendTemplate(
+                    $domainName,
+                    $this->config['server']['backend'],
                 );
             }
         }

@@ -1,0 +1,63 @@
+#!/bin/bash
+# info: list web applications for a user
+# options: USER [FORMAT]
+# example: v-list-web-app admin json
+
+user=$1
+format=${2-shell}
+
+# shellcheck source=/etc/hestiacp/hestia.conf
+source /etc/hestiacp/hestia.conf
+# shellcheck source=/usr/local/hestia/func/main.sh
+source $HESTIA/func/main.sh
+source_conf "$HESTIA/conf/hestia.conf"
+
+check_args '1' "$#" 'USER [FORMAT]'
+is_format_valid 'user'
+is_object_valid 'user' 'USER' "$user"
+
+apps_conf="$USER_DATA/web-apps.conf"
+[ -e "$apps_conf" ] || touch "$apps_conf"
+
+json_list() {
+	echo '{'
+	first=1
+	while read -r line; do
+		[ -z "$line" ] && continue
+		eval "$line"
+		status=$(systemctl is-active "$SERVICE" 2> /dev/null || echo "unknown")
+		[ $first -eq 0 ] && echo ','
+		first=0
+		echo -n "  \"$DOMAIN\": {\"TYPE\":\"$TYPE\",\"PORT\":\"$PORT\",\"SERVICE\":\"$SERVICE\",\"APP_ROOT\":\"$APP_ROOT\",\"STATUS\":\"$status\",\"TIME\":\"$TIME\",\"DATE\":\"$DATE\"}"
+	done < "$apps_conf"
+	echo
+	echo '}'
+}
+
+shell_list() {
+	echo "DOMAIN   TYPE   PORT   STATUS   DATE"
+	echo "------   ----   ----   ------   ----"
+	while read -r line; do
+		[ -z "$line" ] && continue
+		eval "$line"
+		status=$(systemctl is-active "$SERVICE" 2> /dev/null || echo "unknown")
+		echo "$DOMAIN $TYPE $PORT $status $DATE"
+	done < "$apps_conf"
+}
+
+plain_list() {
+	while read -r line; do
+		[ -z "$line" ] && continue
+		eval "$line"
+		status=$(systemctl is-active "$SERVICE" 2> /dev/null || echo "unknown")
+		echo -e "$DOMAIN\t$TYPE\t$PORT\t$status\t$APP_ROOT\t$SERVICE\t$DATE"
+	done < "$apps_conf"
+}
+
+case $format in
+	json) json_list ;;
+	plain) plain_list ;;
+	shell) shell_list | column -t ;;
+esac
+
+exit
