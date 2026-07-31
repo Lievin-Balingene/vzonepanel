@@ -27,11 +27,18 @@ nbproject/project.xml
 
 .env
 
-# Distribution CSS
-web/css/themes/
+# Distribution CSS — track compiled themes so VPS installs work without a local build
+# (source remains in web/css/src/)
+web/css/themes/custom/
+!web/css/themes/
+!web/css/themes/*.min.css
+!web/css/themes/*.min.css.map
 
-# Distribution JS
-web/js/dist/
+# Distribution JS — track compiled bundles for VPS deploys
+web/js/dist/**
+!web/js/dist/
+!web/js/dist/*.min.js
+!web/js/dist/*.min.js.map
 
 # Composer
 composer.phar

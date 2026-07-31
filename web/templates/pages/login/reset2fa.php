@@ -1,44 +1,42 @@
-<div class="login">
-	<a href="/" class="u-block u-mb40">
-		<img src="/images/logo.svg" alt="<?= tohtml($_SESSION["APP_NAME"]) ?>" width="100" height="120">
-	</a>
-	<?php if ($success) { ?>
-		<div>
-			<h1 class="login-title">
-				<?= tohtml( _("Account Unlocked")) ?>
-			</h1>
-			<div class="u-mt20">
-				<p><?_("Two-factor authentication is now turned off for your account.<br><br>You may now proceed to log in.");?></p>
-				<a href="/login/" class="button button-secondary">
-					<?= tohtml( _("Log in")) ?>
-				</a>
+<div class="login vz-login">
+	<div class="vz-login-stage">
+		<?php require $_SERVER["HESTIA"] . "/web/templates/includes/login-hero.php"; ?>
+		<main class="vz-login-panel">
+			<div class="vz-login-card is-ready">
+				<?php if (!empty($success)) { ?>
+					<header class="vz-login-header">
+						<h1 class="login-title"><?= tohtml(_("Account unlocked")) ?></h1>
+						<p class="vz-login-subtitle"><?= tohtml(_("Two-factor authentication is now turned off. You can sign in with your password.")) ?></p>
+					</header>
+					<a href="/login/" class="button vz-login-submit"><?= tohtml(_("Sign in")) ?></a>
+				<?php } else { ?>
+					<form method="post" action="/reset2fa/" class="vz-login-form">
+						<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
+						<header class="vz-login-header">
+							<h1 class="login-title"><?= tohtml(_("Unlock account")) ?></h1>
+							<p class="vz-login-subtitle"><?= tohtml(_("Use your backup 2FA reset code to disable two-factor authentication.")) ?></p>
+						</header>
+						<?php if (!empty($error)) { ?>
+							<div class="vz-login-alert" role="alert">
+								<i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+								<span><?= tohtml($error) ?></span>
+							</div>
+						<?php } ?>
+						<div class="vz-login-field">
+							<label for="user" class="form-label"><?= tohtml(_("Username")) ?></label>
+							<input type="text" class="form-control" name="user" id="user" autocomplete="username" required autofocus>
+						</div>
+						<div class="vz-login-field">
+							<label for="twofa" class="form-label"><?= tohtml(_("2FA reset code")) ?></label>
+							<input type="text" class="form-control" name="twofa" id="twofa" autocomplete="off" required>
+						</div>
+						<div class="vz-login-actions">
+							<button type="submit" class="button vz-login-submit"><?= tohtml(_("Unlock")) ?></button>
+							<a href="/login/?logout" class="button button-secondary"><?= tohtml(_("Back to sign in")) ?></a>
+						</div>
+					</form>
+				<?php } ?>
 			</div>
-		</div>
-	<?php } else { ?>
-		<form method="post" action="/reset2fa/">
-			<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
-			<h1 class="login-title">
-				<?= tohtml( _("Unlock Account")) ?>
-			</h1>
-			<?php if (!empty($error)) { ?>
-				<p class="error"><?= tohtml($error) ?></p>
-			<?php } ?>
-			<div class="u-mb10">
-				<label for="user" class="form-label"><?= tohtml( _("Username")) ?></label>
-				<input type="text" class="form-control" name="user" id="user" autocomplete="username" required autofocus>
-			</div>
-			<div class="u-mb20">
-				<label for="twofa" class="form-label"><?= tohtml( _("2FA Reset Code")) ?></label>
-				<input type="text" class="form-control" name="twofa" id="twofa" autocomplete="off" required>
-			</div>
-			<div class="u-side-by-side">
-				<button type="submit" class="button">
-					<?= tohtml( _("Submit")) ?>
-				</button>
-				<a href="/login/?logout" class="button button-secondary">
-					<?= tohtml( _("Back")) ?>
-				</a>
-			</div>
-		</form>
-	<?php } ?>
+		</main>
+	</div>
 </div>

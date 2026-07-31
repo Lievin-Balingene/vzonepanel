@@ -1,5 +1,6 @@
-<link rel="alternate icon" href="/images/favicon.png" type="image/png">
-<link rel="icon" href="/images/logo.svg" type="image/svg+xml">
+<link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/images/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/images/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">

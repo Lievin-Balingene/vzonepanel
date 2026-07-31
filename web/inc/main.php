@@ -91,9 +91,11 @@ if (isset($_SESSION["user"])) {
 }
 
 if ($_SESSION["RELEASE_BRANCH"] == "release" && $_SESSION["DEBUG_MODE"] == "false") {
-	define("JS_LATEST_UPDATE", "v=" . $_SESSION["VERSION"]);
+	$asset_build = $_SESSION["THEME_BUILD"] ?? ($_SESSION["VERSION"] ?? time());
+	define("JS_LATEST_UPDATE", "v=" . $asset_build);
 } else {
-	define("JS_LATEST_UPDATE", "r=" . time());
+	$asset_build = $_SESSION["THEME_BUILD"] ?? time();
+	define("JS_LATEST_UPDATE", "r=" . $asset_build);
 }
 
 if (!defined("NO_AUTH_REQUIRED")) {

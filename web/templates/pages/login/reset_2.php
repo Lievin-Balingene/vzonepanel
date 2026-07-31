@@ -1,31 +1,32 @@
-<div class="login">
-	<a href="/" class="u-block u-mb40">
-		<img src="/images/logo.svg" alt="<?= tohtml($_SESSION["APP_NAME"]) ?>" width="100" height="120">
-	</a>
-	<form method="get" action="/reset/">
-		<h1 class="login-title">
-			<?= tohtml( _("Forgot Password")) ?>
-		</h1>
-		<?php if (!empty($error)) { ?>
-			<p class="error"><?= tohtml($error) ?></p>
-		<?php } ?>
-		<p class="inline-success u-mb10">
-			<?= tohtml( _("Password reset code has been sent to your email address")) ?>
-		</p>
-		<div class="u-mb20">
-			<input type="hidden" name="action" value="confirm">
-			<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
-			<input type="hidden" name="user" value="<?= tohtml($_GET["user"]) ?>">
-			<label for="code" class="form-label"><?= tohtml( _("Reset Code")) ?></label>
-			<input type="text" class="form-control" name="code" id="code" required autofocus>
-		</div>
-		<div class="u-side-by-side">
-			<button type="submit" class="button">
-				<?= tohtml( _("Confirm")) ?>
-			</button>
-			<a href="/reset/" class="button button-secondary">
-				<?= tohtml( _("Back")) ?>
-			</a>
-		</div>
-	</form>
+<div class="login vz-login">
+	<div class="vz-login-stage">
+		<?php require $_SERVER["HESTIA"] . "/web/templates/includes/login-hero.php"; ?>
+		<main class="vz-login-panel">
+			<div class="vz-login-card is-ready">
+				<form method="get" action="/reset/" class="vz-login-form">
+					<header class="vz-login-header">
+						<h1 class="login-title"><?= tohtml(_("Check your email")) ?></h1>
+						<p class="vz-login-subtitle"><?= tohtml(_("A password reset code was sent to your email address.")) ?></p>
+					</header>
+					<?php if (!empty($error)) { ?>
+						<div class="vz-login-alert" role="alert">
+							<i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+							<span><?= tohtml($error) ?></span>
+						</div>
+					<?php } ?>
+					<div class="vz-login-field">
+						<input type="hidden" name="action" value="confirm">
+						<input type="hidden" name="token" value="<?= tohtml($_SESSION["token"]) ?>">
+						<input type="hidden" name="user" value="<?= tohtml($_GET["user"] ?? "") ?>">
+						<label for="code" class="form-label"><?= tohtml(_("Reset code")) ?></label>
+						<input type="text" class="form-control" name="code" id="code" required autofocus>
+					</div>
+					<div class="vz-login-actions">
+						<button type="submit" class="button vz-login-submit"><?= tohtml(_("Confirm code")) ?></button>
+						<a href="/reset/" class="button button-secondary"><?= tohtml(_("Back")) ?></a>
+					</div>
+				</form>
+			</div>
+		</main>
+	</div>
 </div>

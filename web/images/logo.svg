@@ -1,5 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="V-zone Panel">
   <rect width="64" height="64" rx="16" fill="#0B1F33"/>
-  <path d="M18 40V24c0-1.1.9-2 2-2h8.5c5.2 0 8.5 2.9 8.5 7.2 0 2.8-1.4 5-3.8 6.1L40 40h-5.2l-5.8-6.4H25V40H18zm7-12.2h5.1c2.5 0 4 1.2 4 3.2s-1.5 3.2-4 3.2H25v-6.4z" fill="#14B8A6"/>
-  <circle cx="46" cy="20" r="4" fill="#14B8A6"/>
+  <!-- Zone arc -->
+  <circle cx="40" cy="26" r="16" stroke="#14B8A6" stroke-width="3.5" fill="none" opacity="0.95"/>
+  <circle cx="40" cy="26" r="16" stroke="#5EEAD4" stroke-width="1" fill="none" opacity="0.35"/>
+  <!-- V mark -->
+  <path d="M18 18 L32 48 L46 18" stroke="#F8FAFC" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M18 18 L32 48 L46 18" stroke="#14B8A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.35"/>
 </svg>
