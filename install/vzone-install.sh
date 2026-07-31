@@ -164,34 +164,76 @@ case "$ID" in
 esac
 
 # --- Finalize after reboot (installer often reboots) ---
-cat > /usr/local/sbin/vzone-finalize.sh << EOF
+cat > /usr/local/sbin/vzone-finalize.sh << 'EOF'
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 exec >> /var/log/vzone-finalize.log 2>&1
-echo "==== \$(date -Is) V-zone finalize start ===="
-for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-	[ -d /usr/local/hestia/web ] && break
+echo "==== $(date -Is) V-zone finalize start ===="
+
+# Wait up to ~5 minutes for panel core + apt locks
+for i in $(seq 1 60); do
+	if [ -d /usr/local/hestia/web ] && [ -f /usr/local/hestia/conf/hestia.conf ]; then
+		break
+	fi
+	sleep 5
+done
+
+export DEBIAN_FRONTEND=noninteractive
+# Wait for apt/dpkg lock briefly
+for i in $(seq 1 30); do
+	if ! fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 \
+		&& ! fuser /var/lib/apt/lists/lock >/dev/null 2>&1; then
+		break
+	fi
 	sleep 2
 done
-apt-get install -y -qq nodejs npm rsync git 2>/dev/null || true
-bash /usr/local/src/vzonepanel/install/vzone-apply.sh /usr/local/src/vzonepanel
+
+apt-get update -qq 2>/dev/null || true
+apt-get install -y -qq nodejs npm rsync git ca-certificates 2>/dev/null || true
+
+SRC=/usr/local/src/vzonepanel
+if [ ! -d "$SRC/.git" ]; then
+	rm -rf "$SRC"
+	git clone --depth 1 --branch main https://github.com/Lievin-Balingene/vzonepanel.git "$SRC" \
+		|| git clone --depth 1 https://github.com/Lievin-Balingene/vzonepanel.git "$SRC"
+else
+	git -C "$SRC" fetch --depth 1 origin main 2>/dev/null || true
+	git -C "$SRC" reset --hard origin/main 2>/dev/null || git -C "$SRC" pull --ff-only 2>/dev/null || true
+fi
+
+# Apply twice: first may restore vendor; second guarantees UI overlay
+bash "$SRC/install/vzone-apply.sh" "$SRC" || true
+sleep 2
+bash "$SRC/install/vzone-apply.sh" "$SRC" || true
+
+# Force visible branding even if apply partially failed
+if [ -f /usr/local/hestia/conf/hestia.conf ]; then
+	if grep -q "^APP_NAME=" /usr/local/hestia/conf/hestia.conf; then
+		sed -i "s/^APP_NAME=.*/APP_NAME='V-zone Panel'/" /usr/local/hestia/conf/hestia.conf
+	else
+		echo "APP_NAME='V-zone Panel'" >> /usr/local/hestia/conf/hestia.conf
+	fi
+fi
+
+systemctl try-restart hestia 2>/dev/null || true
 systemctl disable vzone-finalize.service 2>/dev/null || true
 rm -f /etc/systemd/system/vzone-finalize.service
 systemctl daemon-reload 2>/dev/null || true
-echo "==== \$(date -Is) V-zone finalize done ===="
+echo "==== $(date -Is) V-zone finalize done ===="
 EOF
 chmod 755 /usr/local/sbin/vzone-finalize.sh
 
 cat > /etc/systemd/system/vzone-finalize.service << 'EOF'
 [Unit]
 Description=Finalize V-zone Panel branding after install
-After=network-online.target
+After=network-online.target hestia.service
 Wants=network-online.target
 
 [Service]
 Type=oneshot
 ExecStart=/usr/local/sbin/vzone-finalize.sh
 RemainAfterExit=yes
+TimeoutStartSec=0
 
 [Install]
 WantedBy=multi-user.target

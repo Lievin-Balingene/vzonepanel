@@ -90,20 +90,44 @@ if [ -f "$PANEL_ROOT/conf/hestia.conf" ]; then
 	else
 		echo "APP_NAME='V-zone Panel'" >> "$PANEL_ROOT/conf/hestia.conf"
 	fi
+	# Prefer light V-zone theme unless admin already chose another custom theme
+	if grep -q "^THEME=" "$PANEL_ROOT/conf/hestia.conf"; then
+		sed -i "s/^THEME=.*/THEME='default'/" "$PANEL_ROOT/conf/hestia.conf"
+	else
+		echo "THEME='default'" >> "$PANEL_ROOT/conf/hestia.conf"
+	fi
+fi
+
+# Always refresh compiled CSS/JS from source tree when present (do not rely only on timestamps)
+if [ -f "$SRC/web/css/themes/default.min.css" ]; then
+	mkdir -p "$PANEL_ROOT/web/css/themes" "$PANEL_ROOT/web/js/dist"
+	cp -f "$SRC/web/css/themes/"*.min.css "$PANEL_ROOT/web/css/themes/" 2> /dev/null || true
+	cp -f "$SRC/web/css/themes/"*.min.css.map "$PANEL_ROOT/web/css/themes/" 2> /dev/null || true
+	if [ -d "$SRC/web/js/dist" ]; then
+		cp -af "$SRC/web/js/dist/." "$PANEL_ROOT/web/js/dist/" 2> /dev/null || true
+	fi
 fi
 
 # Ensure compiled assets exist (rebuild if missing)
 need_build=0
-if [ ! -f "$PANEL_ROOT/web/css/themes/default.min.css" ]; then
+if [ ! -s "$PANEL_ROOT/web/css/themes/default.min.css" ]; then
 	need_build=1
 fi
-if [ ! -f "$PANEL_ROOT/web/js/dist/main.min.js" ]; then
+if [ ! -s "$PANEL_ROOT/web/js/dist/main.min.js" ]; then
 	need_build=1
 fi
 
-# Rebuild when source is newer than deployed bundle (best-effort)
-if [ -f "$SRC/web/css/src/vzone/tokens.css" ] && [ -f "$PANEL_ROOT/web/css/themes/default.min.css" ]; then
+# Rebuild when source tokens are newer than deployed bundle (best-effort)
+if [ -f "$SRC/web/css/src/vzone/tokens.css" ] && [ -s "$PANEL_ROOT/web/css/themes/default.min.css" ]; then
 	if [ "$SRC/web/css/src/vzone/tokens.css" -nt "$PANEL_ROOT/web/css/themes/default.min.css" ]; then
+		need_build=1
+	fi
+fi
+
+# Force rebuild if CSS looks like stock Hestia (no V-zone token marker)
+if [ -s "$PANEL_ROOT/web/css/themes/default.min.css" ]; then
+	if ! grep -q "vz-turquoise\|--vz-" "$PANEL_ROOT/web/css/themes/default.min.css" 2> /dev/null; then
+		echo "[ * ] Deployed CSS is not V-zone branded — forcing rebuild"
 		need_build=1
 	fi
 fi
