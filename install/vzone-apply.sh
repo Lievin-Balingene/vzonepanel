@@ -44,14 +44,59 @@ else
 	cp -a "$SRC/web/." "$PANEL_ROOT/web/"
 fi
 
+# Composer dependencies for Application Manager (Symfony Process, etc.)
+# Always sync composer manifests from source, then ensure vendor is complete.
+mkdir -p "$PANEL_ROOT/web/src"
+if [ -f "$SRC/web/src/composer.json" ]; then
+	cp -f "$SRC/web/src/composer.json" "$PANEL_ROOT/web/src/composer.json"
+fi
+if [ -f "$SRC/web/src/composer.lock" ]; then
+	cp -f "$SRC/web/src/composer.lock" "$PANEL_ROOT/web/src/composer.lock"
+fi
+
+need_composer=0
 if [ ! -f "$PANEL_ROOT/web/src/vendor/autoload.php" ]; then
-	echo "[ ! ] Composer vendor missing under $PANEL_ROOT/web/src — restoring..."
-	if [ -f "$PANEL_ROOT/web/src/composer.json" ] && command -v composer > /dev/null 2>&1; then
-		(cd "$PANEL_ROOT/web/src" && composer install --no-dev --optimize-autoloader)
+	need_composer=1
+fi
+if [ ! -f "$PANEL_ROOT/web/src/vendor/symfony/process/Process.php" ]; then
+	need_composer=1
+fi
+if [ ! -f "$PANEL_ROOT/web/src/vendor/symfony/console/Application.php" ]; then
+	need_composer=1
+fi
+
+if [ "$need_composer" -eq 1 ] || [ "${VZONE_FORCE_COMPOSER:-}" = "1" ]; then
+	echo "[ * ] Installing PHP Composer dependencies (web/src)…"
+	export DEBIAN_FRONTEND=noninteractive
+	if ! command -v composer > /dev/null 2>&1; then
+		apt-get update -qq
+		apt-get install -y -qq composer php-cli php-xml php-mbstring php-curl unzip 2> /dev/null \
+			|| apt-get install -y -qq composer unzip
+	fi
+	# Prefer Hestia bundled PHP if present (matches panel runtime)
+	php_bin="php"
+	if [ -x "$PANEL_ROOT/php/bin/php" ]; then
+		php_bin="$PANEL_ROOT/php/bin/php"
+	fi
+	if command -v composer > /dev/null 2>&1; then
+		(
+			cd "$PANEL_ROOT/web/src"
+			COMPOSER_ALLOW_SUPERUSER=1 "$php_bin" "$(command -v composer)" install --no-dev --optimize-autoloader --no-interaction
+		) || (
+			cd "$PANEL_ROOT/web/src"
+			COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
+		)
 	else
-		echo "Error: $PANEL_ROOT/web/src/vendor/autoload.php missing. Run: cd $PANEL_ROOT/web/src && composer install"
+		echo "Error: composer not found. Install with: apt-get install -y composer"
+		echo "Then run: cd $PANEL_ROOT/web/src && composer install --no-dev --optimize-autoloader"
 		exit 1
 	fi
+fi
+
+if [ ! -f "$PANEL_ROOT/web/src/vendor/symfony/process/Process.php" ]; then
+	echo "Error: Symfony Process still missing after composer install."
+	echo "Run manually: cd $PANEL_ROOT/web/src && composer install --no-dev -o"
+	exit 1
 fi
 
 for f in v-add-web-app v-delete-web-app v-list-web-app v-restart-web-app v-get-web-app-port; do
