@@ -2,9 +2,9 @@
 
 # ======================================================== #
 #
-# Hestia Control Panel Installation Routine
+# V-zone Panel Installation Routine
 # Automatic OS detection wrapper
-# https://www.hestiacp.com/
+# https://github.com/Lievin-Balingene/vzonepanel
 #
 # Currently Supported Operating Systems:
 #
@@ -12,6 +12,11 @@
 # Ubuntu 22.04, 24.04 26.04 LTS
 #
 # ======================================================== #
+
+# GitHub source for OS-specific installers (public repo required for wget/curl)
+VZ_REPO="${VZ_REPO:-Lievin-Balingene/vzonepanel}"
+VZ_BRANCH="${VZ_BRANCH:-main}"
+VZ_RAW="https://raw.githubusercontent.com/${VZ_REPO}/${VZ_BRANCH}"
 
 # Am I root?
 if [ "x$(id -u)" != 'x0' ]; then
@@ -65,7 +70,7 @@ fi
 no_support_message() {
 	echo "****************************************************"
 	echo "Your operating system (OS) is not supported by"
-	echo "Hestia Control Panel. Officially supported releases:"
+	echo "V-zone Panel / Hestia Control Panel. Officially supported:"
 	echo "****************************************************"
 	echo "  Debian 11, 12, 13"
 	echo "  Ubuntu 22.04, 24.04, 26.04 LTS"
@@ -101,31 +106,40 @@ ensure_utf8_locale() {
 ensure_utf8_locale
 
 check_wget_curl() {
-	# Check wget
+	# Prefer installer scripts from this fork; fall back to official Hestia release
+	local url_primary="${VZ_RAW}/install/hst-install-${type}.sh"
+	local url_fallback="https://raw.githubusercontent.com/hestiacp/hestiacp/release/install/hst-install-${type}.sh"
+
 	if [ -e '/usr/bin/wget' ]; then
-		wget -q https://raw.githubusercontent.com/hestiacp/hestiacp/release/install/hst-install-$type.sh -O hst-install-$type.sh
-		if [ "$?" -eq '0' ]; then
-			bash hst-install-$type.sh "$@"
+		if wget -q "$url_primary" -O "hst-install-${type}.sh"; then
+			bash "hst-install-${type}.sh" "$@"
 			exit
-		else
-			echo "Error: hst-install-$type.sh download failed."
-			exit 1
 		fi
-		# fi
+		echo "[ ! ] Fork installer not reachable (is the GitHub repo public?). Trying official Hestia release…"
+		if wget -q "$url_fallback" -O "hst-install-${type}.sh"; then
+			bash "hst-install-${type}.sh" "$@"
+			exit
+		fi
+		echo "Error: hst-install-$type.sh download failed."
+		exit 1
 	fi
 
-	# Check curl
 	if [ -e '/usr/bin/curl' ]; then
-		curl -s -O https://raw.githubusercontent.com/hestiacp/hestiacp/release/install/hst-install-$type.sh
-		if [ "$?" -eq '0' ]; then
-			bash hst-install-$type.sh "$@"
+		if curl -fsS -o "hst-install-${type}.sh" "$url_primary"; then
+			bash "hst-install-${type}.sh" "$@"
 			exit
-		else
-			echo "Error: hst-install-$type.sh download failed."
-			exit 1
 		fi
-		# fi
+		echo "[ ! ] Fork installer not reachable (is the GitHub repo public?). Trying official Hestia release…"
+		if curl -fsS -o "hst-install-${type}.sh" "$url_fallback"; then
+			bash "hst-install-${type}.sh" "$@"
+			exit
+		fi
+		echo "Error: hst-install-$type.sh download failed."
+		exit 1
 	fi
+
+	echo "Error: wget or curl is required."
+	exit 1
 }
 
 # Check for supported operating system before proceeding with download
