@@ -1,153 +1,23 @@
 #!/bin/bash
+# Compatibility wrapper — use vzone-install.sh (single installer for V-zone Panel)
 
-# ======================================================== #
-#
-# V-zone Panel Installation Routine
-# Automatic OS detection wrapper
-# https://github.com/Lievin-Balingene/vzonepanel
-#
-# Currently Supported Operating Systems:
-#
-# Debian 11, 12, 13
-# Ubuntu 22.04, 24.04 26.04 LTS
-#
-# ======================================================== #
+echo "========================================================"
+echo " V-zone Panel"
+echo "========================================================"
+echo
+echo "Use the unified installer (no separate Hestia step):"
+echo
+echo "  wget https://raw.githubusercontent.com/Lievin-Balingene/vzonepanel/main/install/vzone-install.sh"
+echo "  bash vzone-install.sh"
+echo
+echo "Launching vzone-install.sh…"
+echo
 
-# GitHub source for OS-specific installers (public repo required for wget/curl)
-VZ_REPO="${VZ_REPO:-Lievin-Balingene/vzonepanel}"
-VZ_BRANCH="${VZ_BRANCH:-main}"
-VZ_RAW="https://raw.githubusercontent.com/${VZ_REPO}/${VZ_BRANCH}"
-
-# Am I root?
-if [ "x$(id -u)" != 'x0' ]; then
-	echo 'Error: this script can only be executed by root'
-	exit 1
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$SCRIPT_DIR/vzone-install.sh" ]; then
+	exec bash "$SCRIPT_DIR/vzone-install.sh" "$@"
 fi
 
-# Check admin user account
-if [ ! -z "$(grep ^admin: /etc/passwd)" ] && [ -z "$1" ]; then
-	echo "Error: user admin exists"
-	echo
-	echo 'Please remove admin user before proceeding.'
-	echo 'If you want to do it automatically run installer with -f option:'
-	echo "Example: bash $0 --force"
-	exit 1
-fi
-
-# Check admin group
-if [ ! -z "$(grep ^admin: /etc/group)" ] && [ -z "$1" ]; then
-	echo "Error: group admin exists"
-	echo
-	echo 'Please remove admin group before proceeding.'
-	echo 'If you want to do it automatically run installer with -f option:'
-	echo "Example: bash $0 --force"
-	exit 1
-fi
-
-# Detect OS
-if [ -e "/etc/os-release" ] && [ ! -e "/etc/redhat-release" ]; then
-	type=$(grep "^ID=" /etc/os-release | cut -f 2 -d '=')
-	if [ "$type" = "ubuntu" ]; then
-		# Check if lsb_release is installed
-		if [ -e '/usr/bin/lsb_release' ]; then
-			release="$(lsb_release -s -r)"
-			VERSION='ubuntu'
-		else
-			echo "lsb_release is currently not installed, please install it:"
-			echo "apt-get update && apt-get install lsb-release"
-			exit 1
-		fi
-	elif [ "$type" = "debian" ]; then
-		release=$(cat /etc/debian_version | grep -o "[0-9]\{1,2\}" | head -n1)
-		VERSION='debian'
-	else
-		type="NoSupport"
-	fi
-else
-	type="NoSupport"
-fi
-
-no_support_message() {
-	echo "****************************************************"
-	echo "Your operating system (OS) is not supported by"
-	echo "V-zone Panel / Hestia Control Panel. Officially supported:"
-	echo "****************************************************"
-	echo "  Debian 11, 12, 13"
-	echo "  Ubuntu 22.04, 24.04, 26.04 LTS"
-	echo ""
-	exit 1
-}
-
-if [ "$type" = "NoSupport" ]; then
-	no_support_message
-fi
-
-ensure_utf8_locale() {
-	local locale_file="/etc/default/locale"
-
-	if locale | grep -qi 'utf-8'; then
-		return
-	fi
-
-	echo "[ * ] Enabling UTF-8 locale support via C.UTF-8"
-	if ! locale-gen C.UTF-8; then
-		echo "[ ! ] Failed to generate C.UTF-8 locale. Leaving existing locale untouched."
-		return
-	fi
-
-	if ! update-locale LANG=C.UTF-8; then
-		echo "[ ! ] Failed to update LANG in $locale_file. Leaving existing locale untouched."
-		return
-	fi
-
-	export LANG=C.UTF-8
-}
-
-ensure_utf8_locale
-
-check_wget_curl() {
-	# Prefer installer scripts from this fork; fall back to official Hestia release
-	local url_primary="${VZ_RAW}/install/hst-install-${type}.sh"
-	local url_fallback="https://raw.githubusercontent.com/hestiacp/hestiacp/release/install/hst-install-${type}.sh"
-
-	if [ -e '/usr/bin/wget' ]; then
-		if wget -q "$url_primary" -O "hst-install-${type}.sh"; then
-			bash "hst-install-${type}.sh" "$@"
-			exit
-		fi
-		echo "[ ! ] Fork installer not reachable (is the GitHub repo public?). Trying official Hestia release…"
-		if wget -q "$url_fallback" -O "hst-install-${type}.sh"; then
-			bash "hst-install-${type}.sh" "$@"
-			exit
-		fi
-		echo "Error: hst-install-$type.sh download failed."
-		exit 1
-	fi
-
-	if [ -e '/usr/bin/curl' ]; then
-		if curl -fsS -o "hst-install-${type}.sh" "$url_primary"; then
-			bash "hst-install-${type}.sh" "$@"
-			exit
-		fi
-		echo "[ ! ] Fork installer not reachable (is the GitHub repo public?). Trying official Hestia release…"
-		if curl -fsS -o "hst-install-${type}.sh" "$url_fallback"; then
-			bash "hst-install-${type}.sh" "$@"
-			exit
-		fi
-		echo "Error: hst-install-$type.sh download failed."
-		exit 1
-	fi
-
-	echo "Error: wget or curl is required."
-	exit 1
-}
-
-# Check for supported operating system before proceeding with download
-# of OS-specific installer, and throw error message if unsupported OS detected.
-if [[ "$release" =~ ^(11|12|13|22.04|24.04|26.04)$ ]]; then
-	check_wget_curl "$@"
-else
-	no_support_message
-fi
-
-exit
+wget -q -O /tmp/vzone-install.sh \
+	https://raw.githubusercontent.com/Lievin-Balingene/vzonepanel/main/install/vzone-install.sh
+exec bash /tmp/vzone-install.sh "$@"

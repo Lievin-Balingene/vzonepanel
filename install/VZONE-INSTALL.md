@@ -1,52 +1,50 @@
-# Install V-zone Panel on a VPS
+# Install V-zone Panel (one command)
 
-## Why `wget …/hst-install.sh` returned 404
+V-zone Panel installs in **one step**. You do not install Hestia separately.
 
-Your GitHub repository is **private**.  
-`raw.githubusercontent.com` cannot serve private files without a token → **404**.
+## Requirements
 
-**Fix:** GitHub → repo **vzonepanel** → **Settings** → **General** → **Danger Zone** → **Change repository visibility** → **Public**.
+- Fresh Debian 11/12/13 or Ubuntu 22.04/24.04 VPS
+- Root access
+- Public GitHub repo: `Lievin-Balingene/vzonepanel`
 
----
-
-## Recommended install (Debian / Ubuntu)
-
-### 1. Install the Hestia stack (packages)
+## Install
 
 ```bash
-wget https://raw.githubusercontent.com/hestiacp/hestiacp/release/install/hst-install.sh
-bash hst-install.sh
+wget https://raw.githubusercontent.com/Lievin-Balingene/vzonepanel/main/install/vzone-install.sh
+bash vzone-install.sh
 ```
 
-Use a **fresh** VPS. Follow the interactive prompts (email, hostname, password).
+Follow the prompts (email, hostname, admin password).  
+The server may **reboot** at the end — that is normal.  
+After reboot, V-zone UI + Application Manager are applied automatically.
 
-### 2. Apply V-zone Panel (UI + Application Manager)
+Open: `https://YOUR_IP:8083`
+
+## If the panel core is already installed
 
 ```bash
-apt-get update && apt-get install -y git nodejs npm rsync
-cd /usr/local/src
-git clone https://github.com/Lievin-Balingene/vzonepanel.git
-cd vzonepanel
+bash /usr/local/src/vzonepanel/install/vzone-install.sh
+# or
+bash /usr/local/src/vzonepanel/install/vzone-apply.sh
+```
+
+## SSH blocked after install?
+
+On Contabo use **VNC/Console**, then:
+
+```bash
+bash /usr/local/src/vzonepanel/install/vzone-apply.sh
+# or
+/usr/local/hestia/bin/v-add-firewall-rule ACCEPT 0.0.0.0/0 22 TCP SSH
+iptables -I INPUT -p tcp --dport 22 -j ACCEPT
+systemctl restart ssh
+```
+
+## Update V-zone later
+
+```bash
+cd /usr/local/src/vzonepanel
+git pull
 bash install/vzone-apply.sh
 ```
-
-### 3. Sync web templates (optional but recommended)
-
-```bash
-v-update-web-templates
-```
-
-Open `https://YOUR_SERVER_IP:8083` — you should see **V-zone Panel** and **Applications**.
-
----
-
-## Alternative (repo public): download wrapper from your fork
-
-```bash
-wget https://raw.githubusercontent.com/Lievin-Balingene/vzonepanel/main/install/hst-install.sh
-bash hst-install.sh
-# then still run vzone-apply.sh as above
-```
-
-> Note: the OS installer still installs Hestia packages from `apt.hestiacp.com`.  
-> Your V-zone UI/apps are applied with `install/vzone-apply.sh`.
