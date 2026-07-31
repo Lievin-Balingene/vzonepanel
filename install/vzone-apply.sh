@@ -84,7 +84,7 @@ for dest in "$PANEL_ROOT/data/templates/web/php-fpm" "$PANEL_ROOT/install/deb/te
 	[ -f "$NO_PHP_SRC" ] && cp -f "$NO_PHP_SRC" "$dest/no-php.tpl"
 done
 
-# File Manager (FileGator) session fix + V-zone branding
+# File Manager (FileGator) session fix + V-zone branding + repair if broken
 FM_SRC="$SRC/install/deb/filemanager/filegator"
 FM_INSTALL_TPL="$PANEL_ROOT/install/deb/filemanager/filegator"
 if [ -f "$FM_SRC/configuration.php" ]; then
@@ -94,24 +94,47 @@ if [ -f "$FM_SRC/configuration.php" ]; then
 		cp -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" \
 			"$FM_INSTALL_TPL/backend/Services/Session/Adapters/SessionStorage.php"
 	fi
-	# Live File Manager instance (if already installed)
-	if [ -d "$PANEL_ROOT/web/fm" ]; then
-		echo "[ * ] Patching File Manager session handling"
-		cp -f "$FM_SRC/configuration.php" "$PANEL_ROOT/web/fm/configuration.php"
-		if [ -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" ]; then
-			mkdir -p "$PANEL_ROOT/web/fm/backend/Services/Session/Adapters"
-			cp -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" \
-				"$PANEL_ROOT/web/fm/backend/Services/Session/Adapters/SessionStorage.php"
-		fi
-		# Keep APP_NAME in the live FM title
-		if [ -f "$PANEL_ROOT/conf/hestia.conf" ]; then
-			# shellcheck disable=SC1090
-			source "$PANEL_ROOT/conf/hestia.conf" 2> /dev/null || true
-			app_name="${APP_NAME:-V-zone Panel}"
-			sed -i "s|File Manager - .*\"|File Manager - ${app_name}\"|g" "$PANEL_ROOT/web/fm/configuration.php" 2> /dev/null || true
-		fi
-		chown hestiaweb:hestiaweb "$PANEL_ROOT/web/fm/configuration.php" 2> /dev/null || true
+fi
+
+# Detect broken / missing File Manager and reinstall (empty zip upgrades, missing index, etc.)
+fm_broken=0
+if [ ! -d "$PANEL_ROOT/web/fm" ]; then
+	fm_broken=1
+elif [ ! -f "$PANEL_ROOT/web/fm/index.php" ] || [ ! -f "$PANEL_ROOT/web/fm/configuration.php" ]; then
+	fm_broken=1
+elif [ ! -d "$PANEL_ROOT/web/fm/vendor" ] && [ ! -f "$PANEL_ROOT/web/fm/composer.json" ]; then
+	fm_broken=1
+fi
+
+if [ "$fm_broken" -eq 1 ] || [ "${VZONE_REINSTALL_FM:-}" = "1" ]; then
+	echo "[ * ] File Manager missing or broken — reinstalling…"
+	# Ensure install templates are in place for v-add-sys-filemanager
+	mkdir -p "$PANEL_ROOT/install/deb/filemanager/filegator"
+	cp -a "$SRC/install/deb/filemanager/filegator/." "$PANEL_ROOT/install/deb/filemanager/filegator/"
+	if [ -x "$PANEL_ROOT/bin/v-add-sys-filemanager" ]; then
+		# Refresh CLI too (download validation improvements)
+		[ -f "$SRC/bin/v-add-sys-filemanager" ] && install -m 755 "$SRC/bin/v-add-sys-filemanager" "$PANEL_ROOT/bin/v-add-sys-filemanager"
+		"$PANEL_ROOT/bin/v-delete-sys-filemanager" quiet 2> /dev/null || true
+		"$PANEL_ROOT/bin/v-add-sys-filemanager" quiet || echo "[ ! ] File Manager reinstall failed — run: v-add-sys-filemanager"
 	fi
+fi
+
+# Always patch live FM configuration when present
+if [ -d "$PANEL_ROOT/web/fm" ] && [ -f "$FM_SRC/configuration.php" ]; then
+	echo "[ * ] Patching File Manager session handling"
+	cp -f "$FM_SRC/configuration.php" "$PANEL_ROOT/web/fm/configuration.php"
+	if [ -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" ]; then
+		mkdir -p "$PANEL_ROOT/web/fm/backend/Services/Session/Adapters"
+		cp -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" \
+			"$PANEL_ROOT/web/fm/backend/Services/Session/Adapters/SessionStorage.php"
+	fi
+	if [ -f "$PANEL_ROOT/conf/hestia.conf" ]; then
+		# shellcheck disable=SC1090
+		source "$PANEL_ROOT/conf/hestia.conf" 2> /dev/null || true
+		app_name="${APP_NAME:-V-zone Panel}"
+		sed -i "s|File Manager - .*\"|File Manager - ${app_name}\"|g" "$PANEL_ROOT/web/fm/configuration.php" 2> /dev/null || true
+	fi
+	chown hestiaweb:hestiaweb "$PANEL_ROOT/web/fm/configuration.php" 2> /dev/null || true
 fi
 
 if [ -f "$PANEL_ROOT/conf/hestia.conf" ]; then

@@ -69,12 +69,30 @@ rm --recursive --force "$FM_INSTALL_DIR"
 mkdir -p "$FM_INSTALL_DIR"
 cd "$FM_INSTALL_DIR"
 
-[ ! -f "${FM_INSTALL_DIR}/${FM_FILE}" ] && wget "$FM_URL" --quiet -O "${FM_INSTALL_DIR}/${FM_FILE}.zip"
+echo "[ * ] Downloading File Manager (${FM_FILE}.zip)…"
+wget "$FM_URL" --tries=3 --timeout=30 -O "${FM_INSTALL_DIR}/${FM_FILE}.zip"
+# Detect empty/corrupt download (common cause of broken /fm/)
+zip_size=$(stat -c%s "${FM_INSTALL_DIR}/${FM_FILE}.zip" 2> /dev/null || echo 0)
+if [ ! -s "${FM_INSTALL_DIR}/${FM_FILE}.zip" ] || [ "$zip_size" -lt 100000 ]; then
+	echo "ERROR: File Manager download failed or ZIP is empty/corrupt (${zip_size} bytes)."
+	echo "URL: $FM_URL"
+	rm --recursive --force "${FM_INSTALL_DIR}"
+	$BIN/v-change-sys-config-value 'FILE_MANAGER' 'false'
+	$BIN/v-log-action "system" "Error" "Plugins" "File Manager download failed (empty zip)."
+	exit 1
+fi
 
 unzip -qq "${FM_INSTALL_DIR}/${FM_FILE}.zip"
+if [ ! -d "${FM_INSTALL_DIR}/filegator" ]; then
+	echo "ERROR: File Manager archive did not contain expected files."
+	rm --recursive --force "${FM_INSTALL_DIR}"
+	$BIN/v-change-sys-config-value 'FILE_MANAGER' 'false'
+	exit 1
+fi
 mv --force ${FM_INSTALL_DIR}/filegator/* "${FM_INSTALL_DIR}"
 rm --recursive --force ${FM_INSTALL_DIR}/${FM_FILE}
 [[ -f "${FM_INSTALL_DIR}/${FM_FILE}" ]] && rm "${FM_INSTALL_DIR}/${FM_FILE}"
+rm -f "${FM_INSTALL_DIR}/${FM_FILE}.zip"
 
 cp --recursive --force ${HESTIA_INSTALL_DIR}/filemanager/filegator/* "${FM_INSTALL_DIR}"
 
