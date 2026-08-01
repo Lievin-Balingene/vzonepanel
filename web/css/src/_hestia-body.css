@@ -2143,87 +2143,13 @@
 	padding-top: 15px;
 }
 
-/* Login
+/* Login — base reset (V-zone styles live in vzone/legacy.css)
    ========================================================================== */
 
 .page-login,
 .page-reset {
-	background:
-		radial-gradient(circle, rgb(102 158 231 / 100%) 0%, rgb(43 86 177 / 100%) 100%),
-		rgb(102 158 231);
-
 	& .debug-panel {
 		display: none;
-	}
-
-	& .app {
-		align-items: center;
-		justify-content: center;
-		flex-direction: row;
-	}
-}
-
-.login {
-	flex-grow: 1;
-	padding: 30px;
-	margin-bottom: 15%;
-
-	& .form-label {
-		color: #fff;
-	}
-
-	& .error {
-		color: #be5abf;
-		margin-bottom: 20px;
-	}
-
-	@media (--viewport-small) {
-		border-radius: 6px;
-		background-color: rgb(255 255 255 / 70%);
-		box-shadow:
-			0 8px 25px rgb(0 0 0 / 30%),
-			inset 0 0 2px rgb(255 255 255 / 100%);
-		padding: 70px 50px;
-		max-width: 370px;
-
-		& .form-label {
-			color: #4b4b4b;
-		}
-	}
-
-	@media (--viewport-medium) {
-		display: flex;
-		align-items: flex-end;
-		gap: 30px;
-		max-width: 500px;
-
-		& form {
-			flex-grow: 1;
-		}
-	}
-}
-
-.login-title {
-	color: #fff;
-	font-size: 1.05rem;
-	font-weight: 500;
-	margin-bottom: 30px;
-
-	@media (--viewport-small) {
-		color: var(--color-text-heading);
-	}
-}
-
-.login-form-link {
-	color: #fff;
-	text-transform: uppercase;
-
-	@media (--viewport-small) {
-		color: var(--color-text-link);
-
-		&:hover {
-			color: #0077c6;
-		}
 	}
 }
 
