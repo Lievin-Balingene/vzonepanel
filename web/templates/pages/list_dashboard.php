@@ -48,14 +48,14 @@ $vz_section_icons = [
 
 $vz_tools = [];
 
-// —— Email (cPanel: Email) ——
-if (!empty($_SESSION["MAIL_SYSTEM"]) && ($u["MAIL_DOMAINS"] ?? "0") != "0") {
-	$items = [
-		$tool("/list/mail/", "fa-envelope", _("Email Accounts"), "email mail mailbox account webmail"),
-		$tool("/add/mail/", "fa-plus", _("Create Mail Domain"), "add mail email domain"),
-		$tool("/list/mail/", "fa-inbox", _("Mail Domains"), "mail domain mx catchall"),
-		$tool("/list/log/", "fa-envelope-open-text", _("Mail Delivery"), "mail log delivery bounce"),
-	];
+// —— Email (cPanel: Email) — always visible like cPanel Tools
+$items = [
+	$tool("/list/mail/", "fa-envelope", _("Email Accounts"), "email mail mailbox account webmail"),
+	$tool("/add/mail/", "fa-plus", _("Create Mail Domain"), "add mail email domain"),
+	$tool("/list/mail/", "fa-inbox", _("Mail Domains"), "mail domain mx catchall"),
+];
+if (!empty($_SESSION["MAIL_SYSTEM"])) {
+	$items[] = $tool("/list/log/", "fa-envelope-open-text", _("Mail Delivery"), "mail log delivery bounce");
 	$webmail_alias = $_SESSION["WEBMAIL_ALIAS"] ?? "webmail";
 	if (!empty($hostname)) {
 		$items[] = $tool(
@@ -65,8 +65,8 @@ if (!empty($_SESSION["MAIL_SYSTEM"]) && ($u["MAIL_DOMAINS"] ?? "0") != "0") {
 			"webmail roundcube",
 		);
 	}
-	$vz_tools[] = ["cat" => _("Email"), "items" => $items];
 }
+$vz_tools[] = ["cat" => _("Email"), "items" => $items];
 
 // —— Files (cPanel: Files) ——
 $files = ["cat" => _("Files"), "items" => []];

@@ -1,4 +1,4 @@
-/* V-zone Panel — Legacy Hestia class restyle bridge
+﻿/* V-zone Panel â€” Legacy Hestia class restyle bridge
    ========================================================================== */
 
 /* Toolbar */
@@ -84,7 +84,7 @@
 }
 
 .units-table-row:hover {
-	border-color: rgb(20 184 166 / 35%);
+	border-color: rgb(61 122 181 / 35%);
 	box-shadow: var(--shadow-sm);
 }
 
@@ -98,7 +98,7 @@
 	color: var(--color-text-heading);
 }
 
-/* Login — clean centered V-zone card */
+/* Login â€” clean centered V-zone card */
 .page-login,
 .page-reset {
 	background: var(--color-background);
@@ -120,7 +120,7 @@
 	position: relative;
 	display: block;
 	background:
-		radial-gradient(ellipse 90% 60% at 50% -10%, rgb(20 184 166 / 14%), transparent 55%),
+		radial-gradient(ellipse 90% 60% at 50% -10%, rgb(61 122 181 / 14%), transparent 55%),
 		radial-gradient(ellipse 70% 45% at 100% 100%, rgb(11 31 51 / 6%), transparent 50%),
 		var(--color-background);
 }
@@ -262,7 +262,7 @@
 
 .vz-login .form-control:focus {
 	border-color: var(--vz-turquoise-bright);
-	box-shadow: 0 0 0 4px rgb(20 184 166 / 18%);
+	box-shadow: 0 0 0 4px rgb(61 122 181 / 18%);
 	outline: none;
 }
 
@@ -359,7 +359,7 @@ body.page-reset {
 [data-theme="dark"] .vz-login,
 .theme-dark .vz-login {
 	background:
-		radial-gradient(ellipse 90% 60% at 50% -10%, rgb(20 184 166 / 12%), transparent 55%),
+		radial-gradient(ellipse 90% 60% at 50% -10%, rgb(61 122 181 / 12%), transparent 55%),
 		var(--color-background);
 }
 

@@ -1,4 +1,4 @@
-/* V-zone Panel — Design system components
+﻿/* V-zone Panel â€” Design system components
    ========================================================================== */
 
 /* Buttons */
@@ -18,7 +18,7 @@
 	font-weight: 600;
 	line-height: 1.2;
 	cursor: pointer;
-	box-shadow: 0 6px 16px rgb(13 148 136 / 25%);
+	box-shadow: 0 6px 16px rgb(41 79 120 / 22%);
 	transition:
 		transform var(--transition-fast),
 		box-shadow var(--transition-fast),
@@ -31,7 +31,7 @@
 	color: #fff;
 	filter: brightness(1.05);
 	transform: translateY(-1px);
-	box-shadow: 0 10px 22px rgb(13 148 136 / 28%);
+	box-shadow: 0 10px 22px rgb(41 79 120 / 26%);
 }
 
 .button:active,
@@ -177,7 +177,7 @@ a.vz-card:hover {
 	gap: 16px;
 }
 
-/* Quick Install cards — override legacy hard-coded colors for light/dark */
+/* Quick Install cards â€” override legacy hard-coded colors for light/dark */
 .card {
 	background: var(--color-surface);
 	border: 1px solid var(--color-border);
@@ -193,7 +193,7 @@ a.vz-card:hover {
 .card:hover {
 	transform: translateY(-2px);
 	box-shadow: var(--shadow-md);
-	border-color: rgb(20 184 166 / 35%);
+	border-color: rgb(61 122 181 / 35%);
 }
 
 .card.disabled {
@@ -361,7 +361,7 @@ textarea:focus,
 select:focus {
 	outline: none;
 	border-color: var(--vz-turquoise);
-	box-shadow: 0 0 0 3px rgb(13 148 136 / 16%);
+	box-shadow: 0 0 0 3px rgb(41 79 120 / 16%);
 }
 
 textarea {
@@ -635,7 +635,7 @@ body.loading .spinner-overlay {
 	position: relative;
 }
 
-/* Dashboard / Tools home — clear, uncluttered
+/* Dashboard / Tools home â€” clear, uncluttered
    ========================================================================== */
 
 .vz-dashboard {
@@ -712,7 +712,7 @@ body.loading .spinner-overlay {
 .vz-tools-search input:focus {
 	outline: none;
 	border-color: var(--vz-turquoise);
-	box-shadow: 0 0 0 3px rgb(13 148 136 / 12%);
+	box-shadow: 0 0 0 3px rgb(41 79 120 / 12%);
 }
 
 .vz-tools-panel {
@@ -754,11 +754,11 @@ body.loading .spinner-overlay {
 }
 
 .vz-tools-panel-title i {
-	color: var(--vz-turquoise-deep);
+	color: var(--vz-blue);
 	width: 1rem;
 	text-align: center;
 	font-size: 0.9rem;
-	opacity: 0.9;
+	opacity: 0.95;
 }
 
 .vz-tools-chevron {
@@ -815,7 +815,7 @@ body.loading .spinner-overlay {
 	display: grid;
 	place-items: center;
 	background: transparent;
-	color: var(--color-warning);
+	color: var(--vz-yellow-deep);
 	font-size: 0.95rem;
 	flex: none;
 	transition: none;
@@ -823,26 +823,26 @@ body.loading .spinner-overlay {
 
 .vz-tool:hover .vz-tool-icon {
 	background: transparent;
-	color: var(--vz-turquoise-deep);
+	color: var(--vz-blue);
 	transform: none;
 }
 
 .vz-tool-label {
 	font-weight: 500;
 	font-size: 0.875rem;
-	color: var(--color-text-link);
+	color: var(--vz-blue);
 	line-height: 1.25;
 }
 
 .vz-tool:hover .vz-tool-label {
-	color: var(--vz-turquoise);
+	color: var(--vz-blue-bright);
 }
 
 .vz-tool-desc {
 	display: none;
 }
 
-/* Aside — account / usage */
+/* Aside â€” account / usage */
 .vz-tools-aside {
 	display: grid;
 	gap: 10px;

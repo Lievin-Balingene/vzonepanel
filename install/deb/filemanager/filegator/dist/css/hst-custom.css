@@ -3,29 +3,29 @@
    ========================================================================== */
 
 :root {
-	--vz-turquoise: #0d9488;
-	--vz-turquoise-bright: #14b8a6;
-	--vz-turquoise-soft: #ccfbf1;
-	--vz-turquoise-deep: #0f766e;
-	--vz-navy: #0b1f33;
-	--vz-navy-mid: #132f4c;
+	--vz-turquoise: #294f78;
+	--vz-turquoise-bright: #3d7ab5;
+	--vz-turquoise-soft: #e8f1f8;
+	--vz-turquoise-deep: #1e3a57;
+	--vz-navy: #294f78;
+	--vz-navy-mid: #1e3a57;
 
-	--fm-bg: #f7f9fc;
+	--fm-bg: #f5f7fa;
 	--fm-surface: #ffffff;
-	--fm-surface-2: #eef2f7;
+	--fm-surface-2: #f0f3f7;
 	--fm-surface-hover: #e8eef5;
-	--fm-border: #d8e0ea;
-	--fm-border-strong: #c1ccd9;
+	--fm-border: #d9e2ec;
+	--fm-border-strong: #c5d0dc;
 	--fm-text: #3d4f63;
 	--fm-text-muted: #6b7c90;
-	--fm-text-heading: #0b1f33;
-	--fm-primary: var(--vz-turquoise);
-	--fm-primary-hover: var(--vz-turquoise-bright);
-	--fm-primary-soft: var(--vz-turquoise-soft);
-	--fm-folder: #d97706;
+	--fm-text-heading: #1e3a57;
+	--fm-primary: #294f78;
+	--fm-primary-hover: #3d7ab5;
+	--fm-primary-soft: #e8f1f8;
+	--fm-folder: #f0b429;
 	--fm-radius: 10px;
 	--fm-radius-sm: 8px;
-	--fm-shadow: 0 4px 12px rgb(11 31 51 / 6%);
+	--fm-shadow: 0 4px 12px rgb(41 79 120 / 6%);
 	--fm-font: "Outfit", "Segoe UI", system-ui, sans-serif;
 }
 

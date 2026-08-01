@@ -1,4 +1,4 @@
-/* V-zone Panel — App shell (sidebar + topbar)
+﻿/* V-zone Panel â€” App shell (sidebar + topbar)
    ========================================================================== */
 
 *,
@@ -64,7 +64,7 @@ a:hover {
 	height: 100vh;
 	display: flex;
 	flex-direction: column;
-	background: linear-gradient(180deg, var(--sidebar-bg) 0%, #071525 100%);
+	background: var(--sidebar-bg);
 	border-right: 1px solid var(--sidebar-border);
 	z-index: 40;
 	overflow: hidden;
@@ -104,7 +104,7 @@ a:hover {
 }
 
 .vz-sidebar-brand-text span {
-	color: var(--vz-turquoise-bright);
+	color: var(--vz-yellow);
 }
 
 .vz-sidebar-nav {
@@ -168,9 +168,9 @@ a:hover {
 }
 
 .vz-nav-link.active {
-	background: rgb(20 184 166 / 18%);
+	background: rgb(255 255 255 / 12%);
 	color: var(--sidebar-text-active);
-	box-shadow: inset 3px 0 0 var(--sidebar-accent);
+	box-shadow: inset 3px 0 0 var(--vz-yellow);
 }
 
 .vz-nav-link .vz-nav-badge {
@@ -208,7 +208,7 @@ a:hover {
 
 .app.sidebar-collapsed .vz-nav-link.active {
 	box-shadow: none;
-	background: rgb(20 184 166 / 22%);
+	background: rgb(240 180 41 / 22%);
 }
 
 /* Topbar
@@ -308,7 +308,7 @@ a:hover {
 .vz-search input:focus {
 	outline: none;
 	border-color: var(--vz-turquoise);
-	box-shadow: 0 0 0 3px rgb(13 148 136 / 18%);
+	box-shadow: 0 0 0 3px rgb(41 79 120 / 18%);
 }
 
 .vz-search input::placeholder {
