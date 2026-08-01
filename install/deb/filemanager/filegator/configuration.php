@@ -239,35 +239,45 @@ $dist_config["services"]["Filegator\Services\Auth\AuthInterface"] = [
 
 $dist_config["services"]["Filegator\Services\View\ViewInterface"]["config"] = [
 	"add_to_head" => '
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="/fm/css/hst-custom.css">
-    <style>
-        .logo {
-            width: 46px;
-        }
-    </style>
+	<script>
+		(function () {
+			try {
+				var t = localStorage.getItem("vz-theme") || localStorage.getItem("theme");
+				if (t === "dark" || document.documentElement.getAttribute("data-theme") === "dark") {
+					document.documentElement.setAttribute("data-theme", "dark");
+				} else if (t === "light") {
+					document.documentElement.setAttribute("data-theme", "light");
+				} else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+					document.documentElement.setAttribute("data-theme", "dark");
+				}
+			} catch (e) {}
+		})();
+	</script>
     ',
 	"add_to_body" => '
 <script>
     var checkVueLoaded = setInterval(function() {
         if (document.getElementsByClassName("container").length) {
             clearInterval(checkVueLoaded);
-            var navProfile = document.getElementsByClassName("navbar-item profile")[0]; navProfile.replaceWith(navProfile.cloneNode(true))
-            document.getElementsByClassName("navbar-item logout")[0].text="Exit to Control Panel \u00BB";
-            div = document.getElementsByClassName("container")[0];
-            callback = function(){
-                if (document.getElementsByClassName("navbar-item logout")[0]){
-                    if ( document.getElementsByClassName("navbar-item logout")[0].text != "Exit to Control Panel \u00BB" ){
-                        var navProfile = document.getElementsByClassName("navbar-item profile")[0]; navProfile.replaceWith(navProfile.cloneNode(true))
-                        document.getElementsByClassName("navbar-item logout")[0].text="Exit to Control Panel \u00BB";
-                    }
+            var navProfile = document.getElementsByClassName("navbar-item profile")[0];
+            if (navProfile) { navProfile.replaceWith(navProfile.cloneNode(true)); }
+            var logout = document.getElementsByClassName("navbar-item logout")[0];
+            if (logout) { logout.textContent = "Retour au panneau \u00BB"; }
+            var div = document.getElementsByClassName("container")[0];
+            var callback = function(){
+                var lo = document.getElementsByClassName("navbar-item logout")[0];
+                if (lo && lo.textContent !== "Retour au panneau \u00BB") {
+                    var np = document.getElementsByClassName("navbar-item profile")[0];
+                    if (np) { np.replaceWith(np.cloneNode(true)); }
+                    lo.textContent = "Retour au panneau \u00BB";
                 }
-            }
-            config = {
-                childList:true,
-                subtree:true
-            }
-            observer = new MutationObserver(callback);
-            observer.observe(div,config);
+            };
+            var observer = new MutationObserver(callback);
+            observer.observe(div, { childList: true, subtree: true });
         }
     }, 200);
 </script>',

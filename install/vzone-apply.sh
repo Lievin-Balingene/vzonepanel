@@ -147,11 +147,14 @@ done
 FM_SRC="$SRC/install/deb/filemanager/filegator"
 FM_INSTALL_TPL="$PANEL_ROOT/install/deb/filemanager/filegator"
 if [ -f "$FM_SRC/configuration.php" ]; then
-	mkdir -p "$FM_INSTALL_TPL/backend/Services/Session/Adapters"
+	mkdir -p "$FM_INSTALL_TPL/backend/Services/Session/Adapters" "$FM_INSTALL_TPL/dist/css"
 	cp -f "$FM_SRC/configuration.php" "$FM_INSTALL_TPL/configuration.php"
 	if [ -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" ]; then
 		cp -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" \
 			"$FM_INSTALL_TPL/backend/Services/Session/Adapters/SessionStorage.php"
+	fi
+	if [ -f "$FM_SRC/dist/css/hst-custom.css" ]; then
+		cp -f "$FM_SRC/dist/css/hst-custom.css" "$FM_INSTALL_TPL/dist/css/hst-custom.css"
 	fi
 fi
 
@@ -178,14 +181,26 @@ if [ "$fm_broken" -eq 1 ] || [ "${VZONE_REINSTALL_FM:-}" = "1" ]; then
 	fi
 fi
 
-# Always patch live FM configuration when present
+# Always patch live FM configuration + V-zone theme CSS when present
 if [ -d "$PANEL_ROOT/web/fm" ] && [ -f "$FM_SRC/configuration.php" ]; then
-	echo "[ * ] Patching File Manager session handling"
+	echo "[ * ] Patching File Manager branding & theme"
 	cp -f "$FM_SRC/configuration.php" "$PANEL_ROOT/web/fm/configuration.php"
 	if [ -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" ]; then
 		mkdir -p "$PANEL_ROOT/web/fm/backend/Services/Session/Adapters"
 		cp -f "$FM_SRC/backend/Services/Session/Adapters/SessionStorage.php" \
 			"$PANEL_ROOT/web/fm/backend/Services/Session/Adapters/SessionStorage.php"
+	fi
+	# Sync V-zone File Manager CSS into live install + install templates
+	if [ -f "$FM_SRC/dist/css/hst-custom.css" ]; then
+		mkdir -p "$PANEL_ROOT/web/fm/dist/css" "$FM_INSTALL_TPL/dist/css"
+		cp -f "$FM_SRC/dist/css/hst-custom.css" "$PANEL_ROOT/web/fm/dist/css/hst-custom.css"
+		cp -f "$FM_SRC/dist/css/hst-custom.css" "$FM_INSTALL_TPL/dist/css/hst-custom.css"
+		# FileGator may also serve css from public/css symlink or dist root
+		if [ -d "$PANEL_ROOT/web/fm/dist" ]; then
+			mkdir -p "$PANEL_ROOT/web/fm/dist/css"
+		fi
+		# Some installs expose /fm/css/ via dist/
+		chown hestiaweb:hestiaweb "$PANEL_ROOT/web/fm/dist/css/hst-custom.css" 2> /dev/null || true
 	fi
 	if [ -f "$PANEL_ROOT/conf/hestia.conf" ]; then
 		# shellcheck disable=SC1090
