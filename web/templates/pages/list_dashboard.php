@@ -101,22 +101,39 @@ if (!empty($_SESSION["MAIL_SYSTEM"]) && ($u["MAIL_DOMAINS"] ?? "0") != "0") {
 }
 
 if (!empty($_SESSION["DB_SYSTEM"]) && ($u["DATABASES"] ?? "0") != "0") {
+	$db_items = [
+		[
+			"href" => "/list/db/",
+			"icon" => "fa-database",
+			"label" => _("Manage Databases"),
+			"keys" => "database mysql pgsql postgres",
+		],
+		[
+			"href" => "/add/db/",
+			"icon" => "fa-plus",
+			"label" => _("Create Database"),
+			"keys" => "add create database",
+		],
+	];
+	if (strpos($_SESSION["DB_SYSTEM"], "mysql") !== false) {
+		array_unshift($db_items, [
+			"href" => "/phpmyadmin/",
+			"icon" => "fa-table",
+			"label" => "phpMyAdmin",
+			"keys" => "phpmyadmin mysql",
+		]);
+	}
+	if (strpos($_SESSION["DB_SYSTEM"], "pgsql") !== false) {
+		array_unshift($db_items, [
+			"href" => "/phppgadmin/",
+			"icon" => "fa-table",
+			"label" => "phpPgAdmin",
+			"keys" => "phppgadmin postgres",
+		]);
+	}
 	$vz_tools[] = [
 		"cat" => _("Databases"),
-		"items" => [
-			[
-				"href" => "/list/db/",
-				"icon" => "fa-database",
-				"label" => _("MySQL / PostgreSQL"),
-				"keys" => "database mysql pgsql postgres phpmyadmin",
-			],
-			[
-				"href" => "/add/db/",
-				"icon" => "fa-plus",
-				"label" => _("Create Database"),
-				"keys" => "add create database",
-			],
-		],
+		"items" => $db_items,
 	];
 }
 
@@ -198,10 +215,7 @@ if ($_SESSION["userContext"] === "admin" && empty($_SESSION["look"])) {
 	<div class="vz-tools-layout">
 		<div class="vz-tools-main">
 			<header class="vz-tools-pagehead">
-				<div>
-					<h1><?= _("Tools") ?></h1>
-					<p><?= htmlspecialchars(sprintf(_("Welcome back, %s"), $u["NAME"] ?? $user)) ?></p>
-				</div>
+				<h1><?= _("Tools") ?></h1>
 			</header>
 
 			<div class="vz-tools-search">
@@ -209,19 +223,19 @@ if ($_SESSION["userContext"] === "admin" && empty($_SESSION["look"])) {
 				<input
 					type="search"
 					x-model="q"
-					placeholder="<?= _("Search tools…") ?>"
+					placeholder="<?= _("Search Tools (/)") ?>"
 					aria-label="<?= _("Search tools") ?>"
 					autofocus
 				>
 			</div>
 
 			<?php foreach ($vz_tools as $i => $section) {
-				$sec_id = "sec-" . $i;
-				$sec_icon = $vz_section_icons[$section["cat"]] ?? "fa-grip"; ?>
+				$sec_icon = $vz_section_icons[$section["cat"]] ?? "fa-grip";
+				$open_default = $i === 0 ? "true" : "false"; ?>
 				<section
 					class="vz-tools-panel"
 					x-show="sectionVisible($el)"
-					x-data="{ open: true }"
+					x-data="{ open: <?= $open_default ?> }"
 				>
 					<button
 						type="button"
@@ -256,7 +270,7 @@ if ($_SESSION["userContext"] === "admin" && empty($_SESSION["look"])) {
 
 		<aside class="vz-tools-aside">
 			<div class="vz-aside-card">
-				<h2><?= _("Account") ?></h2>
+				<h2><?= _("General Information") ?></h2>
 				<dl class="vz-aside-meta">
 					<div>
 						<dt><?= _("User") ?></dt>

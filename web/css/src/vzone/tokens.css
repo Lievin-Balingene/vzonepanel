@@ -63,9 +63,9 @@
 	--icon-color-lightblue: #38bdf8;
 
 	/* Layout shell */
-	--sidebar-width: 260px;
-	--sidebar-collapsed-width: 76px;
-	--topbar-height: 64px;
+	--sidebar-width: 220px;
+	--sidebar-collapsed-width: 68px;
+	--topbar-height: 56px;
 	--shell-gap: 20px;
 	--content-max-width: 1280px;
 
