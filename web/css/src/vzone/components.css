@@ -177,74 +177,263 @@ a.vz-card:hover {
 	gap: 16px;
 }
 
-/* Quick Install cards â€” override legacy hard-coded colors for light/dark */
-.card {
+/* Quick Install / Application catalog — compact Softaculous-style cards */
+.cards,
+.vz-app-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+	gap: 10px;
+	margin-bottom: 22px;
+}
+
+.card,
+.vz-app-card {
+	display: flex;
+	flex-direction: column;
 	background: var(--color-surface);
 	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-lg);
-	box-shadow: var(--shadow-sm);
+	border-radius: var(--border-radius-sm);
+	box-shadow: none;
 	margin-bottom: 0;
+	overflow: hidden;
+	text-decoration: none;
+	color: inherit;
+	min-height: 0;
 	transition:
-		transform var(--transition-base),
-		box-shadow var(--transition-base),
-		border-color var(--transition-base);
+		border-color var(--transition-fast),
+		background var(--transition-fast),
+		box-shadow var(--transition-fast);
 }
 
-.card:hover {
-	transform: translateY(-2px);
-	box-shadow: var(--shadow-md);
-	border-color: rgb(61 122 181 / 35%);
+a.vz-app-card:hover,
+.card:hover:not(.disabled) {
+	transform: none;
+	border-color: var(--vz-blue-bright);
+	box-shadow: var(--shadow-xs);
+	background: var(--color-surface);
 }
 
-.card.disabled {
+.card.disabled,
+.vz-app-card.disabled {
 	opacity: 0.55;
 	pointer-events: none;
-	filter: grayscale(0.4);
+	filter: grayscale(0.35);
 }
 
+.vz-app-card .card-thumb,
 .card-thumb {
 	background: var(--color-surface-2);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	height: 160px;
-	padding: 20px;
+	height: 72px;
+	padding: 10px;
 	border-bottom: 1px solid var(--color-border);
 }
 
+.vz-app-card .card-thumb img,
 .card-thumb img {
-	max-width: 100%;
-	max-height: 100%;
+	max-width: 44px;
+	max-height: 44px;
+	width: auto;
+	height: auto;
 	object-fit: contain;
 }
 
+.vz-app-card .card-content,
 .card-content {
-	padding: 16px;
+	padding: 8px 8px 10px;
 	color: var(--color-text);
 	text-align: center;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
 }
 
+.vz-app-card .card-title,
 .card-title {
-	font-size: 1.05rem;
+	font-size: 0.8rem;
 	font-weight: 650;
-	margin-bottom: 8px;
-	color: var(--color-text);
+	margin: 0;
+	color: var(--color-text-heading);
+	line-height: 1.25;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 }
 
+.vz-app-card .card-desc,
 .card-desc {
-	font-size: 0.85rem;
+	font-size: 0.7rem;
 	color: var(--color-text-muted);
-	margin-bottom: 12px;
-	line-height: 1.4;
+	margin: 0;
+	line-height: 1.3;
+}
+
+.vz-app-cta {
+	display: inline-block;
+	margin-top: 6px;
+	padding: 3px 8px;
+	border-radius: 999px;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	background: var(--vz-blue-soft);
+	color: var(--vz-blue-deep);
+}
+
+.vz-app-cta.is-muted {
+	background: var(--color-surface-2);
+	color: var(--color-text-muted);
+}
+
+a.vz-app-card:hover .vz-app-cta {
+	background: var(--vz-blue);
+	color: #fff;
+}
+
+.vz-apps-group {
+	margin-bottom: 8px;
+}
+
+.vz-apps-group .vz-section-title {
+	margin-top: 4px;
+}
+
+/* Application Manager — domain install rows + runtime cards */
+.vz-domain-install-grid {
+	display: grid;
+	gap: 8px;
+}
+
+.vz-domain-install-card {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 14px;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-sm);
+}
+
+.vz-domain-install-meta {
+	display: grid;
+	gap: 2px;
+	min-width: 0;
+}
+
+.vz-domain-install-meta strong {
+	color: var(--color-text-heading);
+	font-size: 0.92rem;
+	word-break: break-all;
+}
+
+.vz-domain-install-meta span {
+	font-size: 0.78rem;
+	color: var(--color-text-muted);
+}
+
+.vz-domain-install-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.vz-domain-install-actions .button {
+	min-height: 32px;
+	padding: 0 12px;
+	font-size: 0.8rem;
+	width: auto;
+}
+
+.vz-runtime-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 10px;
+}
+
+.vz-runtime-card {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-sm);
+	padding: 12px;
+	display: grid;
+	gap: 10px;
+}
+
+.vz-runtime-card-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.vz-runtime-card-head a {
+	font-weight: 650;
+	color: var(--vz-blue);
+	word-break: break-all;
+	font-size: 0.9rem;
+}
+
+.vz-runtime-card-body {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.8rem;
+	color: var(--color-text-muted);
+}
+
+.vz-runtime-path {
+	display: block;
+	width: 100%;
+	font-size: 0.72rem;
+	padding: 4px 6px;
+	background: var(--color-surface-2);
+	border-radius: 4px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.vz-runtime-card-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.vz-runtime-card-actions .button {
+	min-height: 32px;
+	padding: 0 10px;
+	font-size: 0.78rem;
+	width: auto;
 }
 
 .vz-empty-state {
-	padding: 28px 20px;
+	padding: 22px 16px;
 	text-align: center;
 	color: var(--color-text-muted);
 	border: 1px dashed var(--color-border);
-	border-radius: var(--border-radius-lg);
-	background: var(--color-surface-2);
+	border-radius: var(--border-radius-sm);
+	background: var(--color-surface);
+	font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+	.cards,
+	.vz-app-grid {
+		grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+		gap: 8px;
+	}
+
+	.vz-app-card .card-thumb,
+	.card-thumb {
+		height: 64px;
+	}
 }
 
 /* Badge */

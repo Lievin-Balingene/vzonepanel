@@ -195,7 +195,7 @@ if (!empty($_SESSION["WEB_SYSTEM"]) && ($u["WEB_DOMAINS"] ?? "0") != "0") {
 		"/list/apps/",
 		"fa-cubes",
 		_("Application Manager"),
-		"app php python node django flask fastapi wordpress express softaculous",
+		"app php python node django flask fastapi wordpress drupal joomla prestashop softaculous express",
 	);
 	$software["items"][] = $tool(
 		"/list/web/",
